@@ -6,6 +6,7 @@ import {BASIC_STEPS,ALL_STEPS,makeInsights,evaluateBudgetScenario} from '/insigh
 import {COMPARE_KEY,MAX_COMPARE,COMPARE_FILTER_STEPS,normalizeCompareIds,toggleCompareId,buildComparison,filterComparisonCandidates} from '/comparison.js';
 import {WORKSPACE_PAGES,parseWorkspaceHash,workspaceHash,searchWorkspace} from '/workspace-search.js';
 import {DATA_GROUPS,ERASE_CATEGORIES,describeDataState,readStoragePresence,eraseOwnedStorage} from '/data-center.js';
+import {buildConceptStory} from '/concept-story.js';
 import {planLocalPhoto,preparePhotoLocally,PHOTO_SOURCE_MAX_BYTES} from '/photo-tools.js';
 import {createDecisionBrief} from '/report-export.js';
 import {makePrivateReport,readPrivateReport,LIVE_REPORT_SESSION_KEY} from '/report-session.js';
@@ -37,7 +38,7 @@ function savePendingScan(pending){
   try{if(pending)sessionStorage.setItem(PENDING_SCAN_KEY,JSON.stringify(pending));
       else sessionStorage.removeItem(PENDING_SCAN_KEY);}catch{}
 }
-const state={tab:parseWorkspaceHash(window.location.hash)||'overview',globalSearchQuery:'',compareIds:(()=>{try{return normalizeCompareIds(localStorage.getItem(COMPARE_KEY),catalog);}catch{return [];}})(),compareQuery:'',compareStep:'all',insightBudget:null,shelfQuery:'',editingId:null,undoShelf:null,savedIds:(()=>{try{return normalizeSavedConcepts(localStorage.getItem(SAVED_CONCEPTS_KEY),catalog);}catch{return [];}})(),catalogQuery:'',catalogStep:'all',catalogDecision:'all',catalogSort:'recommended',savedOnly:false,affordableOnly:false,routineLog:(()=>{try{return localStorage.getItem(ROUTINE_LOG_KEY);}catch{return null;}})(),shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:savedLiveReport?.signals||null,scanSource:savedLiveReport?'live':null,savedLiveReport:!!savedLiveReport,cartIds:[],file:null,sourceFile:null,preview:null,imageReady:false,imageDimensions:null,canPrepare:false,preparing:false,photoPlan:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false,goalFromScan:null};
+const state={storyId:null,tab:parseWorkspaceHash(window.location.hash)||'overview',globalSearchQuery:'',compareIds:(()=>{try{return normalizeCompareIds(localStorage.getItem(COMPARE_KEY),catalog);}catch{return [];}})(),compareQuery:'',compareStep:'all',insightBudget:null,shelfQuery:'',editingId:null,undoShelf:null,savedIds:(()=>{try{return normalizeSavedConcepts(localStorage.getItem(SAVED_CONCEPTS_KEY),catalog);}catch{return [];}})(),catalogQuery:'',catalogStep:'all',catalogDecision:'all',catalogSort:'recommended',savedOnly:false,affordableOnly:false,routineLog:(()=>{try{return localStorage.getItem(ROUTINE_LOG_KEY);}catch{return null;}})(),shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:savedLiveReport?.signals||null,scanSource:savedLiveReport?'live':null,savedLiveReport:!!savedLiveReport,cartIds:[],file:null,sourceFile:null,preview:null,imageReady:false,imageDimensions:null,canPrepare:false,preparing:false,photoPlan:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false,goalFromScan:null};
 try{const saved=JSON.parse(localStorage.getItem('routinegap_state')||'null');if(saved&&typeof saved==='object'){
   state.shelf=normalizeShelf(saved.shelf);state.budget=Number.isFinite(saved.budget)?Math.max(0,Math.min(1000,saved.budget)):60;state.goal=goals.some(g=>g.id===saved.goal)?saved.goal:'moisture';state.fragranceFree=saved.fragranceFree===true;state.sampleInventory=saved.sampleInventory===true;
 }}catch{}
@@ -49,6 +50,7 @@ const markMode=()=>state.scanSource==='live'?'<span class="label-pill">REAL YOUC
 function navigate(tab,{push=true,focus=true}={}){
   if(!WORKSPACE_PAGES.some(p=>p.id===tab))return;
   if(push&&window.location.hash!==workspaceHash(tab))window.history.pushState({tab},'',workspaceHash(tab));
+  if(state.storyId&&tab!=='shop')closeConceptStory({restoreFocus:false});
   state.tab=tab;
   render();
   window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
@@ -290,7 +292,7 @@ function renderCatalogResults(d){
       <div class="product-meta"><span class="product-price">${money(p.price)} <small>demo price</small></span>
       <span class="label-pill ${unavailable?'peach':''}">${unavailable?'USE WHAT YOU OWN':p.decision==='optional'?'OPTIONAL':'ROUTINE GAP'}</span></div>
       <div class="concept-actions"><button class="tiny-btn" type="button" data-cart="${escape(p.id)}" ${unavailable?'disabled title="Already have this step on your shelf"':''}>${cart?'✓ Remove from demo cart':unavailable?'Already covered':'Add to demo cart +'}</button><button class="tiny-btn concept-compare ${state.compareIds.includes(p.id)?'is-comparing':''}" type="button" data-compare="${escape(p.id)}" aria-pressed="${state.compareIds.includes(p.id)}">${state.compareIds.includes(p.id)?'✓ In comparison':'⇆ Compare'}</button>
-      <details class="concept-detail"><summary>Why this label?</summary><p>${escape(p.reason)}</p></details></div></div>
+      <button class="concept-details-open" type="button" data-open-story="${escape(p.id)}">Explore full details →</button><details class="concept-detail"><summary>Why this label?</summary><p>${escape(p.reason)}</p></details></div></div>
     </article>`;
   }).join('');
 }
@@ -350,6 +352,7 @@ function renderShop(d){
     </aside>
   </div>`;
   renderCatalogResults(d);
+  renderConceptStory();
 }
 function renderScenario(snapshot) {
  const budget=state.insightBudget===null?snapshot.decision.budget:state.insightBudget;
@@ -705,6 +708,7 @@ function renderCommandResults(){
 }
 function openWorkspaceSearch(){
  const overlay=$('#workspace-search-overlay');if(!overlay||!overlay.hidden)return;
+ if(state.storyId)closeConceptStory({restoreFocus:false});
  commandReturnFocus=document.activeElement;
  state.globalSearchQuery='';
  $('#command-search-input').value='';
@@ -727,6 +731,7 @@ function activateCommandResult(index){
  const entry=results[index];if(!entry)return;
  if(entry.type==='concept'){
    const selected=catalog.find(p=>p.id===entry.id);if(!selected)return;
+   state.storyId=selected.id;
    state.catalogQuery=selected.name;state.catalogStep='all';state.catalogDecision='all';
    state.savedOnly=false;state.affordableOnly=false;state.catalogSort='recommended';
  }else if(entry.type==='owned'){
@@ -766,7 +771,61 @@ document.addEventListener('keydown',event=>{
  }
 });
 
+let storyReturnFocus=null;
+function renderConceptStory(){
+ const overlay=$('#concept-story-overlay'),region=$('#concept-story-content');
+ if(!overlay||overlay.hidden||!region||!state.storyId)return;
+ const d=decide(),p=buildConceptStory({id:state.storyId,catalog,decisionRows:d.rows,owned:d.owned,sampleInventory:state.sampleInventory,budget:state.budget,goal:state.goal,fragranceFree:state.fragranceFree});
+ if(!p){closeConceptStory();return;}
+ const focused=document.activeElement;
+ const action=focused?.dataset?.save?'save':focused?.dataset?.cart?'cart':focused?.dataset?.compare?'compare':null;
+ const saved=state.savedIds.includes(p.id),compared=state.compareIds.includes(p.id),cart=state.cartIds.includes(p.id);
+ region.innerHTML=`<div class="story-layout"><div class="story-media">
+ <div class="story-concept-art art-${escape(p.step)}" aria-hidden="true"><div class="story-pack"><div class="story-pack-cap"></div><div class="story-pack-body"><small>routinegap.</small><b>${escape(stepLabels[p.step])}</b><em>CONCEPT</em></div></div></div>
+ <div class="story-art-caption">FICTIONAL CONCEPT · NOT A PRODUCT PHOTO</div><div class="story-art-facts"><span>NO MERCHANT INVENTORY</span><span>NO VERIFIED FORMULA</span><span>NO REAL CHECKOUT</span></div></div>
+ <div class="story-content"><div class="eyebrow">${escape(p.brand)} · ${escape(stepLabels[p.step])}</div>
+ <h2 id="story-title">${escape(p.name)}</h2><p id="story-summary" class="story-lead">${escape(p.description)}</p>
+ <div class="story-purchase-row"><div><strong>${money(p.price)}</strong><small>Example USD price, not a merchant offer</small></div><span class="label-pill ${p.duplicate?'peach':''}">${escape(p.storyLabel)}</span></div>
+ <div class="story-actions"><button class="primary" type="button" data-cart="${escape(p.id)}" ${p.duplicate?'disabled title="Your own shelf has this category"':''}>${p.duplicate?'Already represented on shelf':cart?'✓ Remove from demo cart':'＋ Add to demo cart'}</button>
+ <button class="secondary" type="button" data-save="${escape(p.id)}" aria-pressed="${saved}">${saved?'♥ Saved idea':'♡ Save idea'}</button>
+ <button class="secondary" type="button" data-compare="${escape(p.id)}" aria-pressed="${compared}">${compared?'✓ In comparison':'⇄ Compare'}</button></div>
+ <p class="story-local-caption">All three actions are fictional planning tools. No purchase, transaction or provider request is made.</p>
+ <section class="story-reason"><div class="eyebrow">EXPLAINABLE RECOMMENDATION</div><h3>Why this concept?</h3><p>${escape(p.reason)}</p></section>
+ <div class="story-fit-grid">
+ ${[['Real shelf coverage',p.duplicate?'Already represented':p.sampleInventory?'Starter shelf excluded':'Not recorded as owned'],['Demo budget',p.individuallyAffordable?'Within '+money(p.demoBudget):'Over '+money(p.demoBudget)],['Fragrance-free tag',p.fragranceTagged?'Illustrative tag present':'Not tagged fragrance-free'],['Stated focus',p.goalTagged?'Concept-tag match':'No matching concept tag']].map(([a,b])=>`<div><span>${escape(a)}</span><strong>${escape(b)}</strong></div>`).join('')}</div>
+ ${p.existing.length?`<section class="story-owned-notice"><strong>You already recorded a ${escape(stepLabels[p.step].toLowerCase())}</strong><p>${escape(p.existing.join(' · '))}</p><button class="tiny-btn" data-go="shelf">See my real shelf →</button></section>`:''}
+ <section class="story-education"><div class="eyebrow">EDUCATIONAL CATEGORY CONTEXT</div><h3>${escape(p.category.heading)}</h3>
+ <div><strong>Routine placement</strong><p>${escape(p.category.placement)}</p></div>
+ <div><strong>How to compare</strong><p>${escape(p.category.intent)}</p></div>
+ <div><strong>What to verify</strong><p>${escape(p.category.caution)}</p></div></section>
+ <section class="story-tag-explain"><div class="eyebrow">TAG GLOSSARY · NOT INGREDIENT VERIFICATION</div><h3>What's behind the labels?</h3>
+ ${p.tags.map(t=>`<div><span>${escape(t.label)}</span><p>${escape(t.meaning)}</p></div>`).join('')}</section>
+ <section class="story-alternatives"><div class="eyebrow">ALTERNATIVES WITHIN THE SAME CATEGORY</div><h3>Three more concepts to explore</h3>
+ ${p.related.map(item=>`<button class="story-alternative" data-open-story="${escape(item.id)}" type="button"><span><strong>${escape(item.name)}</strong><small>${escape(stepLabels[item.step])} · illustrative alternative</small></span><b>${money(item.price)}</b><span aria-hidden="true">↗</span></button>`).join('')}
+ <button class="tiny-btn" data-go="compare">Open Compare Lab →</button></section>
+ <p class="story-disclosure">${escape(p.disclosure)} Cosmetic YouCam signals do not establish the effectiveness of these examples.</p>
+ </div></div>`;
+ if(action)region.querySelector(`[data-${action}]`)?.focus({preventScroll:true});
+}
+function openConceptStory(id){
+ if(!catalog.some(p=>p.id===id))return;
+ const o=$('#concept-story-overlay');if(!o)return;
+ if($('#workspace-search-overlay')&&!$('#workspace-search-overlay').hidden)closeWorkspaceSearch({restoreFocus:false});
+ if(o.hidden)storyReturnFocus=document.activeElement;
+ state.storyId=id;o.hidden=false;document.body.classList.add('is-story-open');
+ renderConceptStory();$('#close-concept-story')?.focus({preventScroll:true});
+}
+function closeConceptStory({restoreFocus=true}={}){
+ const o=$('#concept-story-overlay');if(!o||o.hidden)return;
+ const oldId=state.storyId;
+ o.hidden=true;state.storyId=null;document.body.classList.remove('is-story-open');
+ if(restoreFocus){const target=storyReturnFocus?.isConnected?storyReturnFocus:document.querySelector(`[data-open-story="${oldId}"]`);target?.focus({preventScroll:true});}
+ storyReturnFocus=null;
+}
+document.addEventListener('keydown',event=>{const overlay=$('#concept-story-overlay');if(!overlay||overlay.hidden)return;if(event.key==='Escape'){event.preventDefault();closeConceptStory();return;}if(event.key==='Tab'){const controls=[...overlay.querySelectorAll('button:not([disabled])')].filter(x=>x.getClientRects().length);if(!controls.length)return;const first=controls[0],last=controls[controls.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}});
 document.addEventListener('click',event=>{
+ const openStory=event.target.closest('[data-open-story]');if(openStory){openConceptStory(openStory.dataset.openStory);return;}
+ if(event.target.closest('#close-concept-story')||event.target.closest('[data-story-close]')){closeConceptStory();return;}
  if(event.target.closest('#open-workspace-search')){openWorkspaceSearch();return;}
  if(event.target.closest('#close-workspace-search')||event.target.closest('[data-command-close]')){closeWorkspaceSearch();return;}
  const commandResult=event.target.closest('[data-command-index]');if(commandResult){activateCommandResult(Number(commandResult.dataset.commandIndex));return;}
