@@ -16,6 +16,10 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## Export a decision brief (private, local)
+
+From **Decision Trail**, select **Download decision brief (.md)** to save a readable, privacy-conscious Markdown report directly in your browser. It records whether the source was a *real YouCam observation*, a clearly labeled *illustrative sample*, or *no scan*, as well as your explicitly chosen cosmetic preference, stored product shelf, optional concept recommendations, duplicate-avoidance rationale, selected demo cart and its **actual total** against your budget. Manual cart selections that exceed budget are marked **OVER BUDGET**, not falsely shown as compliant. It does not send report data to a server and **never includes the source selfie, API key, demo passcode, or signed scan receipt**. Be careful sharing reports about real people; it is cosmetic context and not medical advice.
+
 ## Photo requirements and useful tools
 
 Our YouCam integration uses **standard-definition (SD)** Skin Analysis V2.0. A photo must be a JPEG/PNG with **short side >=480 px** and **long side <=2,560 px**. RoutineGap caps uploads at **8 MB** (stricter than the provider's 10 MB). Ideal demo examples are **720 × 960 px** or **960 × 1,280 px**, straight-on and evenly lit, with the forehead and skin visible, no glasses or heavy makeup. A **236 × 354 px** thumbnail is unsuitable.
