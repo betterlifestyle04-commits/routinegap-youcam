@@ -47,7 +47,10 @@ export async function getYouCamScan(taskId){
   if(typeof taskId!=='string'||!/^[-_A-Za-z0-9+/=]{10,220}$/.test(taskId))throw new YouCamError('Invalid task identifier.',400);
   const payload=await api('/s2s/v2.0/task/skin-analysis/'+encodeURIComponent(taskId));
   const status=payload?.data?.task_status;
-  if(status==='success')return {state:'success',signals:normalizeScanOutput(payload)};
+  if(status==='success'){
+    try{return {state:'success',signals:normalizeScanOutput(payload)};}
+    catch{throw new YouCamError('YouCam completed the scan, but its result format did not contain supported cosmetic observations. Please contact the project owner before retrying.',502);}
+  }
   if(status==='error')return {state:'error',message:'YouCam could not analyze this image. Try a clear, front-facing photo.'};
   return {state:'running'};
 }
