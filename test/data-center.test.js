@@ -29,7 +29,7 @@ test('privacy snapshot excludes fictitious starter products from real ownership'
  assert.equal(sample.groups.find(g=>g.id==='shelf').status,'Illustrative starter shelf');
  assert.equal(sample.groups.find(g=>g.id==='ideas').count,1);
  assert.equal(sample.groups.find(g=>g.id==='comparison').count,1);
- const actual=describeDataState({shelf:real,sampleInventory:false,liveReport:true,pending:{receipt:'secret'}});
+ const actual=describeDataState({shelf:real,sampleInventory:false,savedLiveReport:true,pending:{receipt:'secret'}});
  assert.equal(actual.realProducts,1);
  assert.ok(actual.groups.find(g=>g.id==='liveReport').hasValue);
  assert.ok(actual.groups.find(g=>g.id==='pending').hasValue);
