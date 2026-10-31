@@ -12,7 +12,8 @@ export const WORKSPACE_PAGES=Object.freeze([
   {id:'shop',title:'Shopping studio',description:'Explore 25 fictional concept products',aliases:['catalog','discover','browse','buy']},
   {id:'compare',title:'Compare lab',description:'Compare up to three illustrated concept products',aliases:['comparison','side by side']},
   {id:'trail',title:'Decision trail',description:'Inspect reasoning and export a private report',aliases:['evidence','explain','report','transparency']},
-  {id:'privacy',title:'Privacy & data',description:'View, export or delete information stored in this browser',aliases:['settings','data','erase','delete','export','consent']}
+  {id:'privacy',title:'Privacy & data',description:'View, export or delete information stored in this browser',aliases:['settings','data','erase','delete','export','consent']},
+  {id:'help',title:'Help center',description:'Search guidance and troubleshooting for scans, products and privacy',aliases:['support','faq','help','troubleshooting','questions']}
 ]);
 const allowed=new Set(WORKSPACE_PAGES.map(p=>p.id));
 export function parseWorkspaceHash(hash){
