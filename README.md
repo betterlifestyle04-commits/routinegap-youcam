@@ -16,6 +16,19 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## New: photo readiness diagnostics and local capture self-check
+
+The Skin Analysis workspace now includes a **Photo Readiness Dashboard** next to the actual upload action. It explains YouCam input constraints without inventing a face-quality score or implying that image-content quality has been assessed.
+
+- **Automatic checks:** selected file type (JPG/PNG), source limit (1.5 KB–24 MB), decoded image minimum short dimension (480 px), maximum final long dimension (2,560 px), and maximum final request body (8 MB). Oversized but otherwise eligible originals are labeled **local preparation available**; too-small originals trigger retake/full-resolution guidance, not upscaling.
+- **Honest manual self-checks:** four optional, browser-only checkboxes for centered frontal face, soft even lighting, unobstructed skin, and original unfiltered photo. They are explicitly **self-reported** and do not imply that computer vision, liveness detection, image grading, skin condition diagnosis or Perfect Corp acceptance has happened.
+- **Next-action guidance:** distinguishes local preparation, insufficient image quality, consent, missing private demo passcode, provider authentication status, and an existing in-progress task. No photo upload or new provider request occurs until the user explicitly uses the existing live scan action.
+- **Drag and drop:** a single valid original photo can be dropped onto the existing photo-selection area; the drop goes through exactly the same private validation as the file chooser.
+- **Consent reset:** choosing a new image clears the old image-specific consent flag and previously ticked manual self-checks. A person must consent anew for the changed image. UI keyboard focus is retained after changing a self-check.
+- The pre-existing **photo example illustration**, photo-capture guide and links to Photopea, Squoosh, and Perfect Corp specification documentation remain available. The existing non-generative browser resize tool and separate paid API request gates are unchanged.
+
+Tests cover thresholds, prepared images, sample/real separation, provider/consent/passcode gates, impossible states, safety explanations, and UI event wiring. The dashboard performs **no extra network calls, face recognition, or image upload**. The user's photo remains in app memory until the explicitly consented existing scan or page reload.
+
 ## New: Concept Detail Studio — product detail storytelling across 25 examples
 
 RoutineGap now offers immersive, responsive **full product-detail views** in Shopping Studio. Select **Explore full details** on any of the 25 fictional cards, use Global Search to open a concept directly, or explore alternatives within the detail dialog. A large CSS-only packaging illustration is deliberately a *concept*, not a photo of actual merchandise.
