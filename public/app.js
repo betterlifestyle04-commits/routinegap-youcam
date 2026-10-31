@@ -73,6 +73,81 @@ function render(){document.querySelectorAll('.view').forEach(el=>el.classList.to
   const d=decide();const titles={overview:renderOverview,scan:renderScan,shelf:renderShelf,routine:renderRoutine,insights:renderInsights,shop:renderShop,compare:renderCompare,trail:renderTrail,privacy:renderPrivacy};titles[state.tab](d);renderProductTour();drawMessage();$('#provider-chip').textContent=state.liveEnabled?'● YouCam API key authenticated':state.providerConnection==='failed'?'● YouCam authentication failed':state.providerConnection==='checking'?'● Checking YouCam credentials':'● Sample mode available';
 }
 const title=(eyebrow,h1,subtitle)=>`<div class="page-heading"><div class="eyebrow">${eyebrow}</div><h1>${h1}</h1><p>${subtitle}</p></div>`;
+let productTourReturnFocus=null;
+function renderProductTour(){
+ const panel=$('#product-tour-panel'),content=$('#product-tour-content');
+ if(!panel||!content)return;
+ if(!state.productTour){panel.hidden=true;content.innerHTML='';return;}
+ const snap=tourSummary(state.productTour.index,{scanSource:state.scanSource,sampleInventory:state.sampleInventory,shelfCount:state.shelf.length});
+ if(!snap){panel.hidden=true;content.innerHTML='';return;}
+ panel.hidden=false;
+ const trail=TOUR_STEPS.map((part,i)=>`<span class="product-tour-track-part ${i<snap.index?'done':i===snap.index?'current':''}" aria-hidden="true"></span>`).join('');
+ const context=snap.id==='signals'?`<div class="product-tour-context"><span>REPORT PROVENANCE</span><strong>${escape(snap.signalStatus)}</strong></div>`:
+ snap.id==='inventory'?`<div class="product-tour-context"><span>INVENTORY SOURCE</span><strong>${escape(snap.shelfStatus)}</strong></div>`:'';
+ content.innerHTML=`<div class="product-tour-head"><div class="eyebrow">GUIDED TOUR · ${escape(snap.eyebrow)}</div>
+ <button type="button" id="product-tour-close" aria-label="Exit guided tour">×</button></div>
+ <div class="product-tour-track" role="img" aria-label="Step ${snap.index+1} of ${snap.total}">${trail}</div>
+ <h2 id="product-tour-title">${escape(snap.title)}</h2>
+ <p class="product-tour-description">${escape(snap.body)}</p>${context}
+ <div class="product-tour-tip"><span aria-hidden="true">✦</span><p>${escape(snap.tip)}</p></div>
+ <div class="product-tour-controls">
+ <button type="button" class="secondary" data-tour-move="previous" ${snap.previous===null?'disabled':''}>← Back</button>
+ <span>${snap.index+1} / ${snap.total}</span>
+ <button type="button" class="primary" data-tour-move="${snap.next===null?'finish':'next'}">${snap.next===null?'Finish tour ✓':'Continue →'}</button>
+ </div>
+ <p class="product-tour-footnote">You can interact with this page or exit anytime. Nothing in the tour is saved or counted as personal progress.</p>`;
+}
+function startProductTour(){
+ if(state.busy||state.preparing)return notice('A photo scan or preparation is already in progress. Finish that action before starting a guided tour.',true);
+ if(state.productTour)stopProductTour({restoreFocus:false});
+ const existingTourFocus=document.activeElement;
+ if(state.storyId)closeConceptStory({restoreFocus:false});
+ if($('#workspace-search-overlay')&&!$('#workspace-search-overlay').hidden)closeWorkspaceSearch({restoreFocus:false});
+ if($('#mobile-more-overlay')&&!$('#mobile-more-overlay').hidden)closeMobileMore({restoreFocus:false});
+ productTourReturnFocus=existingTourFocus;
+ if(state.scanSource!=='live'&&!state.pending){
+   state.scan=sampleScan.map(item=>({...item}));
+   state.scanSource='sample';
+   state.goalFromScan=null;
+ }
+ state.productTour={index:0};
+ navigate('scan',{fromTour:true});
+ notice(state.scanSource==='live'?'Guided tour opened. Your real YouCam report was preserved.':'Guided tour opened. Example observations are illustrative, not a real YouCam result.');
+ $('#product-tour-close')?.focus({preventScroll:true});
+}
+function moveProductTour(direction){
+ if(!state.productTour)return;
+ if(direction==='finish'){
+   if(state.productTour.index!==TOUR_STEPS.length-1)return;
+   stopProductTour({restoreFocus:false});
+   navigate('overview');
+   notice('Walkthrough completed. No purchases, scans or personal achievements were recorded by the tour.');
+   $('#global-product-tour')?.focus({preventScroll:true});
+   return;
+ }
+ const next=moveTour(state.productTour.index,direction);
+ if(next===null)return;
+ state.productTour.index=next;
+ navigate(TOUR_STEPS[next].tab,{fromTour:true});
+ $('#product-tour-close')?.focus({preventScroll:true});
+}
+function stopProductTour({restoreFocus=true}={}){
+ if(!state.productTour)return;
+ state.productTour=null;
+ renderProductTour();
+ if(restoreFocus){
+  const target=productTourReturnFocus?.isConnected?productTourReturnFocus:$('#global-product-tour');
+  target?.focus({preventScroll:true});
+ }
+ productTourReturnFocus=null;
+}
+document.addEventListener('keydown',event=>{
+ if(event.key!=='Escape'||!state.productTour)return;
+ const panel=$('#product-tour-panel');
+ if(panel&&!panel.hidden&&panel.contains(document.activeElement)){
+  event.preventDefault();stopProductTour();
+ }
+});
 function renderWorkspaceHub(d){
  const v=buildLaunchpad({shelf:state.shelf,sampleInventory:state.sampleInventory,
   savedIds:state.savedIds,compareIds:state.compareIds,routineLog:state.routineLog,
