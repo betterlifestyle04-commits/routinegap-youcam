@@ -39,6 +39,8 @@ const server=createServer(async(req,res)=>{
     if(isAPI(req)&&!ready())return send(res,503,{error:'Live YouCam scans are not yet enabled. Explore the clearly labeled sample session.'});
     if(isAPI(req)&&!access(req))return send(res,401,{error:'Valid demo access passcode required for live YouCam requests.'});
     if(req.method==='POST'&&url.pathname==='/api/scan'){
+      // A configured but rejected key must never start a paid scan or use a user's photo.
+      if(providerConnection!=='authenticated')return send(res,503,{error:'YouCam API authentication has not succeeded. Replace the key in Render and verify provider status before retrying.'});
       if(!rateLimit(req))return send(res,429,{error:'Demo scan budget reached (max two per hour per connection; twenty per day total).'});
       const contentType=(req.headers['content-type']||'').split(';')[0];
       if(!['image/jpeg','image/png'].includes(contentType))return send(res,415,{error:'Upload a JPG or PNG photo.'});
