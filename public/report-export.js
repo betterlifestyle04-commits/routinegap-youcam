@@ -58,7 +58,7 @@ export function createDecisionBrief({decision,cartIds=[],scanSource=null,signals
     withList(owned, 'No owned products recorded.'),
     '',
     '## Routine gaps (heuristic, not medical necessity)',
-    withList(missing.map(clean), 'No missing basic routine steps identified.'),
+    withList(missing.map(x=>clean(x)), 'No missing basic routine steps identified.'),
     '',
     '## Suggested duplicate avoidance',
     '- '+skipped.length+' illustrative catalog alternatives were marked redundant because their routine step is already present on your shelf.',
