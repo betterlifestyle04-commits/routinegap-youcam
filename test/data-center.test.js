@@ -15,8 +15,8 @@ test('data center enumerates only six explicitly owned key groups',()=>{
  assert.equal(DATA_GROUPS.length,6);
  assert.equal(ERASE_CATEGORIES.length,7);
  assert.deepEqual(DATA_GROUPS.map(g=>g.id),['shelf','ideas','comparison','checklist','liveReport','pending']);
- assert.equal(DATA_GROUPS.flatMap(g=>g.keys).length,6);
- assert.equal(new Set(DATA_GROUPS.flatMap(g=>g.keys.map(x=>x.key))).size,6);
+ assert.equal(DATA_GROUPS.flatMap(g=>g.keys).length,7);
+ assert.equal(new Set(DATA_GROUPS.flatMap(g=>g.keys.map(x=>x.key))).size,7);
  assert.equal(dataGroupsFor('shelf').length,1);
  assert.equal(dataGroupsFor('all').length,6);
  assert.deepEqual(dataGroupsFor('__proto__'),[]);
@@ -60,6 +60,12 @@ test('selective erasure preserves all other records and other app data',()=>{
  assert.equal(local.getItem('routinegap_state'),'shelf');
  assert.equal(local.getItem('unrelated_key'),'keep');
  assert.equal(session.getItem('routinegap_pending_scan_v1'),'receipt');
+ assert.ok(DATA_GROUPS.find(g=>g.id==='pending').keys.some(x=>x.key==='routinegap_uncertain_scan_v1'));
+ const extra=storage({'routinegap_pending_scan_v1':'receipt','routinegap_uncertain_scan_v1':'no-secret timestamp','different_app':'leave'});
+ eraseOwnedStorage('pending',{local,session:extra});
+ assert.equal(extra.getItem('routinegap_uncertain_scan_v1'),null);
+ assert.equal(extra.getItem('routinegap_pending_scan_v1'),null);
+ assert.equal(extra.getItem('different_app'),'leave');
 });
 test('erase all deletes only RoutineGap keys in both storage scopes',()=>{
  const keys=Object.fromEntries(DATA_GROUPS.flatMap(g=>g.keys).map(x=>[x.key,'data']));
