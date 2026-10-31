@@ -37,7 +37,7 @@ test('an uncertain submission blocks repeat chargeable requests regardless of co
  assert.equal(j.blockedByUncertainty,true);
  assert.equal(j.hasReceipt,false);
  assert.equal(j.steps[2].status,'uncertain');
- assert.match(j.subtitle,/may already have/i);
+ assert.match(j.subtitle,/cannot tell whether YouCam started/i);
 });
 test('work in progress is visible, but never presented as a completed scan',()=>{
  const upload=scanJourney({busy:true,phase:'uploading',hasPhoto:true,imageReady:true});
