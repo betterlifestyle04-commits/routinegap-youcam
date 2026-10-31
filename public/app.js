@@ -785,14 +785,15 @@ function renderConceptStory(){
  <div class="story-art-caption">FICTIONAL CONCEPT · NOT A PRODUCT PHOTO</div><div class="story-art-facts"><span>NO MERCHANT INVENTORY</span><span>NO VERIFIED FORMULA</span><span>NO REAL CHECKOUT</span></div></div>
  <div class="story-content"><div class="eyebrow">${escape(p.brand)} · ${escape(stepLabels[p.step])}</div>
  <h2 id="story-title">${escape(p.name)}</h2><p id="story-summary" class="story-lead">${escape(p.description)}</p>
- <div class="story-purchase-row"><div><strong>${money(p.price)}</strong><small>Example USD price, not a merchant offer</small></div><span class="label-pill ${p.duplicate?'peach':''}">${escape(p.storyLabel)}</span></div>
- <div class="story-actions"><button class="primary" type="button" data-cart="${escape(p.id)}" ${p.duplicate?'disabled title="Your own shelf has this category"':''}>${p.duplicate?'Already represented on shelf':cart?'✓ Remove from demo cart':'＋ Add to demo cart'}</button>
+ <div class="story-purchase-row"><div><strong>${money(p.price)}</strong><small>Example USD price, not a merchant offer</small></div><span class="label-pill ${p.demoCovered?'peach':''}">${escape(p.storyLabel)}</span></div>
+ <div class="story-actions"><button class="primary" type="button" data-cart="${escape(p.id)}" ${p.demoCovered?'disabled title="This demo scenario already covers this category"':''}>${p.demoCovered?(p.sampleInventory?'Covered in starter demo':'Already represented on shelf'):cart?'✓ Remove from demo cart':'＋ Add to demo cart'}</button>
  <button class="secondary" type="button" data-save="${escape(p.id)}" aria-pressed="${saved}">${saved?'♥ Saved idea':'♡ Save idea'}</button>
  <button class="secondary" type="button" data-compare="${escape(p.id)}" aria-pressed="${compared}">${compared?'✓ In comparison':'⇄ Compare'}</button></div>
  <p class="story-local-caption">All three actions are fictional planning tools. No purchase, transaction or provider request is made.</p>
  <section class="story-reason"><div class="eyebrow">EXPLAINABLE RECOMMENDATION</div><h3>Why this concept?</h3><p>${escape(p.reason)}</p></section>
  <div class="story-fit-grid">
  ${[['Real shelf coverage',p.duplicate?'Already represented':p.sampleInventory?'Starter shelf excluded':'Not recorded as owned'],['Demo budget',p.individuallyAffordable?'Within '+money(p.demoBudget):'Over '+money(p.demoBudget)],['Fragrance-free tag',p.fragranceTagged?'Illustrative tag present':'Not tagged fragrance-free'],['Stated focus',p.goalTagged?'Concept-tag match':'No matching concept tag']].map(([a,b])=>`<div><span>${escape(a)}</span><strong>${escape(b)}</strong></div>`).join('')}</div>
+ ${p.sampleInventory&&p.demoCovered?`<section class="story-owned-notice"><strong>This is demo-shelf coverage, not real ownership</strong><p>Illustrative starter entries include this category. Enter your actual products to personalize duplicate prevention.</p><button class="tiny-btn" data-go="shelf">Set up my real shelf →</button></section>`:""}
  ${p.existing.length?`<section class="story-owned-notice"><strong>You already recorded a ${escape(stepLabels[p.step].toLowerCase())}</strong><p>${escape(p.existing.join(' · '))}</p><button class="tiny-btn" data-go="shelf">See my real shelf →</button></section>`:''}
  <section class="story-education"><div class="eyebrow">EDUCATIONAL CATEGORY CONTEXT</div><h3>${escape(p.category.heading)}</h3>
  <div><strong>Routine placement</strong><p>${escape(p.category.placement)}</p></div>
