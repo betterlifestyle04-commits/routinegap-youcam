@@ -731,7 +731,6 @@ function activateCommandResult(index){
  const entry=results[index];if(!entry)return;
  if(entry.type==='concept'){
    const selected=catalog.find(p=>p.id===entry.id);if(!selected)return;
-   state.storyId=selected.id;
    state.catalogQuery=selected.name;state.catalogStep='all';state.catalogDecision='all';
    state.savedOnly=false;state.affordableOnly=false;state.catalogSort='recommended';
  }else if(entry.type==='owned'){
@@ -740,6 +739,7 @@ function activateCommandResult(index){
  }
  closeWorkspaceSearch({restoreFocus:false});
  navigate(entry.tab);
+ if(entry.type==='concept')openConceptStory(entry.id);
 }
 document.addEventListener('keydown',event=>{
  if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){
