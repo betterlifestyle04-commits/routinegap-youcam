@@ -4,7 +4,7 @@
  * No report is sent to a server, and no actual products are purchased.
  */
 import {goals,stepLabels} from './recommendations.js';
-const clean=(value,max=120)=>String(value??'').replace(/[\r\n\t\0-\x1f\x7f]/g,' ').replace(/[\\`*_[\]()<>{}#!|~]/g,'').replace(/\s+/g,' ').trim().slice(0,max);
+const clean=(value,max=120)=>String(value??'').replace(/https?:\/\/[^\s)]+/gi,'[external link omitted]').replace(/[\r\n\t\0-\x1f\x7f]/g,' ').replace(/[\\`*_[\]()<>{}#!|~]/g,'').replace(/\s+/g,' ').trim().slice(0,max);
 const dollars=value=>'$'+(Number.isFinite(Number(value))?Math.max(0,Number(value)):0).toFixed(2);
 const money=value=>Number.isFinite(Number(value))?Math.max(0,Number(value)):0;
 const heading=step=>stepLabels[step]||'Other routine step';
