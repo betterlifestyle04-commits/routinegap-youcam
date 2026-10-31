@@ -36,7 +36,7 @@ export function scanJourney({hasPhoto=false,imageReady=false,consent=false,passc
  const real=scanSource==='live'&&hasReport===true;
  const sample=scanSource==='sample'&&hasReport===true;
  const active=['uploading','processing'].includes(phase);
- const state=uncertain?'uncertain':pending?'pending':real?'complete':active&&busy?'working':sample?'sample':hasPhoto?'preparing':'empty';
+ const state=uncertain?'uncertain':active&&busy?'working':pending?'pending':real?'complete':sample?'sample':hasPhoto?'preparing':'empty';
  const copy={
   uncertain:{label:'SUBMISSION OUTCOME UNKNOWN',title:'A scan may already have been submitted',subtitle:'The upload response could not be confirmed. We cannot tell whether YouCam started a chargeable task. Do not submit another image until the project owner checks.',tone:'warning',action:'Contact the project owner before another scan'},
   pending:{label:'PROVIDER TASK SAVED',title:'Your existing scan can be resumed',subtitle:'A recovery receipt was issued and is saved in this browser tab. Resume status checks; do not upload the photo again.',tone:'pending',action:'Resume existing scan'},
