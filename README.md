@@ -16,6 +16,16 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## New: Preference Studio — guided cosmetic shopping setup
+
+The Overview and Shopping Studio now offer a **three-stage Preference Studio**. The user can (1) choose one of the six declared cosmetic goals, (2) set a fictional USD spending limit with an accessible slider, numeric field and preset amounts, and (3) review an optional fragrance-free *catalog tag filter* alongside a fully recalculated example shopping plan. A Save action is required to apply changes; Cancel, Escape, and backdrop dismissal leave the previous settings unchanged.
+
+All previews reuse the app's actual deterministic `evaluateShop` recommendation engine. If the browser still contains illustrative starter products, these are **excluded** from genuine ownership in the preview; entered products are used to flag redundant routine categories. The preview displays fictional concepts, example totals and a clear provenance statement, not actual products, clinical outcomes, merchant offers or verified savings. The wizard never automatically submits a photo or a YouCam request.
+
+Saved choices update only the existing local `routinegap_state` preferences (`goal`, `budget`, `fragranceFree`), clear stale demo-cart selections after a real change, and refresh the Overview and Shopping Studio. No new storage keys, account profile, online sync, personal identifiers or third-party analytics are introduced. Accessible focus management, three-stage progress, Escape, mobile layouts and focus traps support keyboard and touch users.
+
+Ten new deterministic regression tests cover goals, validation, mutation safety, budgets, source provenance, engine parity and responsive app integration. The real-Chromium CI journey has additional tests that verify Cancel leaves browser storage untouched and Save updates the actual Shopping Studio, on desktop and mobile with paid scans disabled.
+
 ## New: Self-service Help and Knowledge Center (10th workspace)
 
 RoutineGap now offers a first-class **Help Center** on `/#/help`, with an editorially organized, keyboard-accessible, responsive interface and **33 practical FAQs** spread across five topical categories: Getting started, Skin analysis, Shopping & routines, Privacy & data, and Troubleshooting. A top-bar Help button, sidebar destination, mobile More-menu entry, and global Ctrl/Cmd+K search index all take visitors to the center.
