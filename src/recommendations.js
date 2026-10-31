@@ -56,17 +56,50 @@ export function evaluateShop({shelf=[],budget=60,goal='moisture',fragranceFree=f
     message:needed.length===0?'Your shelf already covers the three basic routine steps.':`Your shelf has ${needed.length} routine gap${needed.length===1?'':'s'} to consider. No purchase is required.`};
 }
 /** Scores are vendor-reported cosmetic observations, not medical confidence percentages. */
+/**
+ * Perfect Corp can return format=json results.output as a keyed object (the
+ * official score_info structure), not only the record list used in older mocks.
+ * Never fill missing scores with zero or invent an average across face regions.
+ */
 export function normalizeScanOutput(payload){
-  const result=payload?.data?.results?.output;
-  if(!Array.isArray(result))throw Error('Provider completed without the expected YouCam result list.');
+  const output=payload?.data?.results?.output;
+  if(!output || typeof output!=='object')throw Error('Provider completed without a YouCam result payload.');
   const allow=new Set(['moisture','oiliness','pore','texture','skin_type','redness']);
-  return result.filter(r=>r&&allow.has(r.type)).map(r=>({
-    type:r.type,uiScore:Number.isFinite(Number(r.ui_score))?Number(r.ui_score):null,
-    rawScore:Number.isFinite(Number(r.raw_score))?Number(r.raw_score):null,
-    // Skin type may have nested categorical vendor data; do not guess from a number.
-    regions:r.regions && typeof r.regions==='object'?r.regions:null
-  }));
+  const entries=Array.isArray(output)?output.map(x=>[x?.type,x]):Object.entries(output);
+  const score=value=>{
+    if(value===null||value===undefined||value==='')return null;
+    if(typeof value!=='number'&&!(typeof value==='string'&&value.trim()!==''))return null;
+    const number=Number(value);
+    return Number.isFinite(number)&&number>=0&&number<=100?number:null;
+  };
+  const signals=[];
+  for(const [type,node] of entries){
+    if(!allow.has(type)||!node||typeof node!=='object'||Array.isArray(node))continue;
+    // 'whole' contains the vendor's own whole-face score for regional measures;
+    // it is not an inferred or invented aggregation.
+    const whole=node.whole&&typeof node.whole==='object'&&!Array.isArray(node.whole)?node.whole:node;
+    const uiScore=score(whole.ui_score);
+    const rawScore=score(whole.raw_score);
+    const isSkinType=type==='skin_type';
+    let regions=null;
+    if(isSkinType){
+      const allowed=['whole','t_zone','u_zone','T_zone','U_zone'];
+      const source=node.regions&&typeof node.regions==='object'?node.regions:node;
+      regions=Object.fromEntries(allowed.flatMap(k=>{
+        const v=source[k], category=typeof v==='string'?v:
+          v&&typeof v==='object'?(v.skin_type||v.type||v.value||null):null;
+        return typeof category==='string'&&category.length<=60?[[k,category]]:[];
+      }));
+      if(Object.keys(regions).length===0)regions=null;
+    }
+    // Do not show empty vendor records as a successful cosmetic observation.
+    if(uiScore===null&&rawScore===null&&!regions)continue;
+    signals.push({type,uiScore,rawScore,regions});
+  }
+  if(!signals.length)throw Error('YouCam completed but returned no usable cosmetic observations.');
+  return signals;
 }
+
 export const sampleScan = Object.freeze([
   {type:'moisture',uiScore:70,rawScore:49},
   {type:'oiliness',uiScore:72,rawScore:61},
