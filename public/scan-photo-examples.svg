@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" viewBox="0 0 940 430">
+<title id="title">Skin photo guide: good front-facing photo compared with too-small low-detail photo</title>
+<desc id="desc">The left green example shows a large, evenly lit, centered face with uncovered forehead, 960 by 1280 pixels. The right peach example shows a small poorly lit portrait at 236 by 354 pixels that is unsuitable for skin analysis. These are educational illustrations, not real skin scans.</desc>
+<defs>
+<linearGradient id="cream" x2="1" y2="1"><stop stop-color="#fcfaf5"/><stop offset="1" stop-color="#f3f7f0"/></linearGradient>
+<linearGradient id="face" x2=".85" y2="1"><stop stop-color="#eebda0"/><stop offset=".6" stop-color="#e8ac8f"/><stop offset="1" stop-color="#ca8a72"/></linearGradient>
+<linearGradient id="dim" x2="0" y2="1"><stop stop-color="#9c9a94"/><stop offset="1" stop-color="#5f6867"/></linearGradient>
+<filter id="soft"><feGaussianBlur stdDeviation="2.4"/></filter>
+</defs>
+<rect width="940" height="430" rx="23" fill="url(#cream)"/>
+<rect x="16" y="16" width="444" height="398" rx="18" fill="#eff5eb" stroke="#b8cdbb"/>
+<rect x="480" y="16" width="444" height="398" rx="18" fill="#fcf1ed" stroke="#eed0c6"/>
+<path d="M16 34Q16 16 34 16H442Q460 16 460 34V81H16Z" fill="#225240"/>
+<path d="M480 34Q480 16 498 16H906Q924 16 924 34V81H480Z" fill="#9a5348"/>
+<circle cx="51" cy="49" r="17" fill="#d5e9ce"/><path d="m43 49 6 6 11-13" fill="none" stroke="#225240" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="515" cy="49" r="17" fill="#ffe1d9"/><path d="m509 43 12 12m0-12-12 12" stroke="#943e35" stroke-width="4" stroke-linecap="round"/>
+<text x="82" y="55" fill="white" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="23">GOOD PHOTO</text>
+<text x="546" y="55" fill="white" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="23">TRY AGAIN</text>
+<rect x="35" y="92" width="408" height="247" rx="12" fill="#d9e7df"/>
+<rect x="500" y="92" width="404" height="247" rx="12" fill="#b4b2ab"/>
+<g transform="translate(239 215)">
+<path d="M-116 117q18-60 76-63h78q59 3 78 63" fill="#334b45"/>
+<path d="M-30 48v37q29 30 60 0V48" fill="#d6a088"/>
+<ellipse cx="0" cy="-31" rx="87" ry="116" fill="url(#face)"/>
+<path d="M-87-63Q-99-165-15-158Q56-174 86-91Q86-69 85-63Q66-110 43-107Q-2-96-42-105Q-65-101-87-63Z" fill="#382f30"/>
+<path d="M-59-71q19-11 41 0m39 0q20-12 40 0" stroke="#594139" stroke-width="5" fill="none" stroke-linecap="round"/>
+<path d="M-60-52q22-14 45 0m30 0q23-14 45 0" stroke="#4c3b33" stroke-width="4" fill="none" stroke-linecap="round"/>
+<ellipse cx="-39" cy="-52" rx="6" ry="7" fill="#47382c"/><ellipse cx="39" cy="-52" rx="6" ry="7" fill="#47382c"/>
+<path d="M0-46q-9 33 0 41h10" stroke="#ae8069" stroke-width="3" fill="none" stroke-linecap="round"/>
+<path d="M-21 19q21 12 42 0" stroke="#a15d64" stroke-width="4" fill="none" stroke-linecap="round"/>
+</g>
+<path d="M67 107h28m-28 0v28 M411 107h-28m28 0v28 M67 322h28m-28 0v-28 M411 322h-28m28 0v-28" stroke="#307a60" stroke-width="3" fill="none" stroke-linecap="round"/>
+<g transform="translate(702 220)" filter="url(#soft)" opacity=".83">
+<rect x="-105" y="-114" width="210" height="234" rx="4" fill="url(#dim)"/>
+<path d="M-85 118q13-36 52-40h66q40 4 52 40" fill="#393e40"/>
+<ellipse cx="0" cy="-15" rx="45" ry="59" fill="#bd8875"/>
+<path d="M-46-37q-17-66 41-69q52-7 54 70q-30-40-94 0" fill="#322e30"/>
+<path d="M-29-17h18m22 0h18" stroke="#372f2e" stroke-width="3"/>
+<path d="M0-10v24m-15 11q16 7 30 0" stroke="#875957" stroke-width="3" fill="none"/>
+</g>
+<path d="M500 92h404v247H500Z" fill="#2a201e" opacity=".11"/>
+<text x="239" y="363" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" fill="#245543" font-size="22" font-weight="700">960 × 1280 px</text>
+<text x="239" y="393" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" fill="#4c6b5a" font-size="14">Centered, sharp, even daylight</text>
+<text x="702" y="363" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" fill="#944e43" font-size="22" font-weight="700">236 × 354 px</text>
+<text x="702" y="393" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" fill="#896a63" font-size="14">Too small, dim and lacking detail</text>
+</svg>
