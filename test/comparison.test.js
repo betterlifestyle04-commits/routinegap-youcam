@@ -97,7 +97,7 @@ test('new Compare Lab is actually linked, keyboard operable, and not a hidden pa
    readFile(new URL('../package.json',import.meta.url),'utf8')
  ]);
  for(const piece of ['data-tab="compare"','id="view-compare"'])assert.ok(html.includes(piece),piece);
- for(const piece of ["function renderCompare()","function renderComparePicker()",'data-compare','aria-pressed','id="compare-search"','id="compare-step"','Compare concepts (','This is','same routine step'])assert.ok(js.includes(piece)||piece==='This is',piece);
+ for(const piece of ["function renderCompare()","function renderComparePicker()",'data-compare','aria-pressed','id="compare-search"','id="compare-step"','Compare concepts (','same routine category'])assert.ok(js.includes(piece),piece);
  assert.ok(js.includes('state.sampleInventory'));
  assert.ok(js.includes("localStorage.setItem(COMPARE_KEY"));
  assert.ok(js.includes("['overview','scan','shelf','routine','insights','shop','compare','trail']"));
