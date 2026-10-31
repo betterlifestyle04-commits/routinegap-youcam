@@ -55,3 +55,13 @@
 .scan-resume-panel p{line-height:1.65;margin:0 0 10px}
 .scan-resume-panel .panel-actions{margin-top:12px}
 .scan-resume-panel .secondary{border-color:#79a58a}
+
+/* User-controlled bridge between cosmetic vendor results and shopping rules. */
+.scan-focus-action{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:7px 9px;font-size:11px;font-weight:750;color:#24593e;background:#e7f2e9;border:1px solid #bedac5;border-radius:8px;cursor:pointer}
+.scan-focus-action:hover,.scan-focus-action:focus-visible{background:#d9eadc;border-color:#75a17f;outline-offset:2px}
+.scan-focus-action:disabled{opacity:.55;cursor:not-allowed}
+.scan-shop-bridge{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:20px 22px;margin-bottom:17px;background:#edf5ea;border:1px solid #cbdccf;border-radius:16px}
+.scan-shop-bridge h3{color:#244d3c;font-size:18px;margin:7px 0}
+.scan-shop-bridge p{max-width:850px;line-height:1.65;margin:0}
+.scan-shop-bridge .tiny-btn{white-space:nowrap}
+@media(max-width:760px){.scan-shop-bridge{flex-direction:column;align-items:stretch}.scan-shop-bridge .tiny-btn{align-self:flex-start;white-space:normal}}

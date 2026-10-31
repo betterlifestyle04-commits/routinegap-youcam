@@ -9,6 +9,7 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - Explainable shopping recommendations: use what you own, avoid duplicate routine steps, fill only missing essentials
 - Budget and fragrance-free preferences; transparent illustrative catalog, non-functional checkout (intentionally no fake store)
 - Shopping cart, cost and budget accounting, readable decision trail
+- **Consent-based report-to-shop bridge**: after a real or clearly marked example scan, a user can actively select a cosmetic metric as a *shopping preference*. The shopping rules still prioritize their own shelf, budget, and exclusions, and never automatically interpret a YouCam score as a diagnosis, a clinical risk, an ingredient allergy, or proof that a product will work. The Decision Trail documents that the focus was chosen by the user.
 - Clearly labeled sample scan; **it never masquerades as a real YouCam result**
 - Server-side **real Perfect Corp YouCam Skin Analysis v2.0 integration** using the documented File API (presigned upload), skin-analysis task submission and task-status polling
 - Privacy-first consent gate and a protected live-demo access code; no saved selfies or medical claims
