@@ -27,6 +27,12 @@ The Overview dashboard includes an **opt-in, free guided demo**. Click **Start i
 
 This path is for demonstrating product UX and heuristic explainability. It does **not** verify a completed paid YouCam analysis. That remains a separate, consented provider-backed test before Devpost submission.
 
+## Optional tab-only real report recovery
+
+After a real YouCam analysis completes, the Skin Analysis page offers an explicit **Save report in this tab** button. It stores a **sanitized allowlist of cosmetic observation fields only** in browser `sessionStorage`, for no more than 24 hours. Reloading that browser tab restores the explicitly saved live report without another paid analysis. Users can select **Forget saved report** at any time. No storage happens automatically. Starting a new paid scan clears the older saved report, and the independent in-progress scan receipt remains separately recoverable.
+
+The saved report never includes the original face photo, file name, provider response, API credentials, demo passcode, or signed scan receipt. It does not upload or save anything in a server database. Session storage may outlive a refresh but is not an encrypted vault; do not save if sharing a device. The export is a separate explicit user action.
+
 ## Export a decision brief (private, local)
 
 From **Decision Trail**, select **Download decision brief (.md)** to save a readable, privacy-conscious Markdown report directly in your browser. It records whether the source was a *real YouCam observation*, a clearly labeled *illustrative sample*, or *no scan*, as well as your explicitly chosen cosmetic preference, stored product shelf, optional concept recommendations, duplicate-avoidance rationale, selected demo cart and its **actual total** against your budget. Manual cart selections that exceed budget are marked **OVER BUDGET**, not falsely shown as compliant. It does not send report data to a server and **never includes the source selfie, API key, demo passcode, or signed scan receipt**. Be careful sharing reports about real people; it is cosmetic context and not medical advice.
