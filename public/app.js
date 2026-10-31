@@ -189,6 +189,60 @@ function renderPreferenceStudio(){
   '<button type="button" class="primary" data-pref-action="'+(stage===2?'apply':'next')+'">'+(stage===2?(changed?'Save preferences ✓':'Keep preferences ✓'):'Continue →')+'</button></div></div>'+
   '<p class="pref-local-note">Nothing is uploaded. Changes apply only after Save and use the existing browser-local settings.</p>';
 }
+let preferenceReturnFocus=null;
+function openPreferenceStudio(){
+ if(state.preferenceStudio)return;
+ preferenceReturnFocus=document.activeElement;
+ if(state.productTour)stopProductTour({restoreFocus:false});
+ if(state.storyId)closeConceptStory({restoreFocus:false});
+ if($('#workspace-search-overlay')&&!$('#workspace-search-overlay').hidden)closeWorkspaceSearch({restoreFocus:false});
+ if(!$('#mobile-more-overlay')?.hidden)closeMobileMore({restoreFocus:false});
+ const overlay=$('#preference-overlay');if(!overlay)return;
+ state.preferenceStudio={step:0,draft:normalizePreferenceDraft({goal:state.goal,budget:state.budget,fragranceFree:state.fragranceFree})};
+ overlay.hidden=false;document.body.classList.add('is-preference-open');
+ renderPreferenceStudio();$('#preference-close')?.focus({preventScroll:true});
+}
+function closePreferenceStudio({restoreFocus=true}={}){
+ const overlay=$('#preference-overlay');if(!overlay||overlay.hidden)return;
+ overlay.hidden=true;state.preferenceStudio=null;document.body.classList.remove('is-preference-open');
+ const content=$('#preference-content');if(content)content.innerHTML='';
+ if(restoreFocus){
+  const target=preferenceReturnFocus?.isConnected?preferenceReturnFocus:state.tab==='shop'?$('#shop-preference-studio'):$('#launch-preference-studio');
+  target?.focus({preventScroll:true});
+ }
+ preferenceReturnFocus=null;
+}
+function changePreferenceStage(action){
+ const dialog=state.preferenceStudio;if(!dialog)return;
+ if(action==='cancel'){closePreferenceStudio();return;}
+ if(action==='apply'){
+  if(dialog.step!==PREF_STAGES.length-1)return;
+  const draft=normalizePreferenceDraft(dialog.draft);
+  const changed=differentPreferences(draft,{goal:state.goal,budget:state.budget,fragranceFree:state.fragranceFree});
+  if(changed){
+    state.goal=draft.goal;state.budget=draft.budget;state.fragranceFree=draft.fragranceFree;
+    state.goalFromScan=null;state.cartIds=[];persist();
+  }
+  closePreferenceStudio({restoreFocus:false});render();
+  notice(changed?'Preferences saved locally. Your fictional demo cart was reset; no scan or purchase occurred.':'Preferences unchanged. Nothing new was saved.');
+  (state.tab==='shop'?$('#shop-preference-studio'):$('#launch-preference-studio'))?.focus({preventScroll:true});
+  return;
+ }
+ const next=stepPreferenceStage(dialog.step,action);
+ if(next===null||next===dialog.step)return;
+ dialog.step=next;renderPreferenceStudio();
+ $('#preference-content [data-pref-action="'+(next===2?'apply':'next')+'"]')?.focus({preventScroll:true});
+}
+document.addEventListener('keydown',event=>{
+ const overlay=$('#preference-overlay');if(!overlay||overlay.hidden)return;
+ if(event.key==='Escape'){event.preventDefault();closePreferenceStudio();return;}
+ if(event.key==='Tab'){
+  const controls=[...overlay.querySelectorAll('button:not([disabled]),input:not([disabled])')].filter(node=>node.getClientRects().length>0);
+  if(!controls.length)return;
+  if(event.shiftKey&&document.activeElement===controls[0]){event.preventDefault();controls[controls.length-1].focus();}
+  else if(!event.shiftKey&&document.activeElement===controls[controls.length-1]){event.preventDefault();controls[0].focus();}
+ }
+});
 function renderWorkspaceHub(d){
  const v=buildLaunchpad({shelf:state.shelf,sampleInventory:state.sampleInventory,
   savedIds:state.savedIds,compareIds:state.compareIds,routineLog:state.routineLog,
