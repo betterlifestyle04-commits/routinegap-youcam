@@ -16,6 +16,19 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## New: Compare Lab — transparent side-by-side concept comparison
+
+The navigation now includes **Compare Lab**, a designed workspace where users can build a three-item side-by-side comparison of fictional skincare concepts.
+
+- Select up to three independently from the 25-item curated concept catalog. Use live product text search, category filters, or the **Compare** controls on Shopping Studio cards.
+- Compare the *example* price, routine step, clearly labeled fictional description and tags, match with the user's *stated* cosmetic goal, declared fragrance-free filter, individual fit to the shopping budget, and overlap with the user's **actual** recorded shelf.
+- The comparison prevents a critical UX error: if the default **illustrative starter shelf** is still active, its products are **not** counted as genuinely owned or used to claim personalized purchase-avoidance.
+- An explicit duplicate-category warning appears when alternatives for the same routine step have been selected. The **combined fictional total** is informational only; it is not an automatic shopping basket, a cost saving, or advice to buy every selected product.
+- Compare selections (max 3 **allowlisted concept IDs**) live in browser `localStorage`. They are **separate from** the six-item saved board, actual user inventory, daily checklist, shopping budget, demo cart, sensitive reports and any YouCam photo or scan task.
+- Cards and table are keyboard navigable, tables are horizontally scrollable on narrow devices, and buttons expose pressed/selected state. The interface does not claim verified product ingredients, clinical suitability, SPF efficacy, independent ratings, merchant availability, real checkout or skin improvement.
+
+The comparison model is deterministic and pure, so selecting, removing, searching and comparing **does not call YouCam**, trigger provider credits or transmit data to a server. Tests verify input allowlisting, cap, toggle behavior, sample-versus-real shelf attribution, product-category alternatives, explicit preference exclusions and immutability.
+
 ## New: My Insights — truthful local analytics and budget scenarios
 
 **My Insights** is now a first-class workspace in the RoutineGap navigation, with a premium responsive visual layout, coverage ring, four metrics, category breakdowns, and an interactive budget simulator. A dashboard call-to-action links into it.
