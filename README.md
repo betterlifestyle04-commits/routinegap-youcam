@@ -16,6 +16,14 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## New: interactive six-stop guided platform walkthrough
+
+RoutineGap includes a **genuine interactive product tour**, accessible from the Overview **Launch interactive tour** action or the global **Guided tour** button. The tour moves users through six real workspaces: Skin Analysis, My Shelf, Routine Planner, Shopping Studio, Compare Lab, and Decision Trail. A fixed nonmodal guide panel provides explanatory text, accurate disclosure notices, six-segment progress, Back, Continue, Finish and an always-visible Exit control. It supports responsive mobile layouts above the bottom dock, focused keyboard controls and Escape to close when focus is within the tour.
+
+This is a **walkthrough, not a production scan or a completed shopping event**. Starting the tour can show explicitly labeled sample skin observations without uploading a photo or consuming YouCam units, but **never overwrites an existing real report** and will not modify or initiate an already pending provider task. Real user shelf entries, saved concepts and shopping controls remain untouched; the tour itself has no stored progress, new browser storage keys or network requests. Clicking another workspace manually closes the tour cleanly. Finishing returns users to Overview without inventing user achievements, purchases, savings or outcomes.
+
+Each of the six steps explains what the user can inspect and what the example evidence cannot establish. Regres­sion tests enforce exact route coverage, step bounds, provenance labels, the no-network/no-storage model, event wiring and accessibility hooks.
+
 ## New: Contextual Launchpad and thumb-friendly mobile navigation
 
 RoutineGap's Overview now has a **local-first contextual Launchpad** whose next-step recommendation comes from actual user-entered shelf entries, checklist checkmarks recorded for the current local date, and saved/compared fictional concept IDs. It transparently separates an illustrative starter shelf from genuine ownership and distinguishes sample skin observations from a real YouCam report. The four launchpad steps are optional navigation prompts—not a clinical score, verified spending savings, a shopping obligation, or historical tracking.
