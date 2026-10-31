@@ -61,7 +61,7 @@ test('budget simulator is independent from the selected real budget and cart',()
  assert.equal(snap.decision.budget,40);
  assert.equal(snap.cartTotal,23);
  assert.equal(snap.savedCount,1);
- assert.equal(JSON.stringify(snap),original,'what-if exploration must not mutate the user's snapshot or cart');
+ assert.equal(JSON.stringify(snap),original,"what-if exploration must not mutate the user\'s snapshot or cart");
 });
 test('simulator caps invalid and excessive budgets, protects essential-only priority',()=>{
  const snap=makeInsights({...opts,shelf:[],budget:60});
