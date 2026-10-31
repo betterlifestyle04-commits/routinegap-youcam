@@ -185,8 +185,10 @@ ${renderWorkspaceHub(d)}
   <div class="demo-journey-steps">
     <button type="button" id="demo-step-scan" ${state.busy?'disabled':''}><b>01</b><strong>Inspect example signals</strong><span>Clearly labeled synthetic values</span></button>
     <button type="button" data-go="shelf"><b>02</b><strong>Audit your shelf</strong><span>Identify steps you already own</span></button>
-    <button type="button" data-go="shop"><b>03</b><strong>Review smart spending</strong><span>Consider budget and duplicates</span></button>
-    <button type="button" data-go="trail"><b>04</b><strong>Export the reasoning</strong><span>Save a private decision brief</span></button>
+    <button type="button" data-go="routine"><b>03</b><strong>Review daily routines</strong><span>Explore morning and evening steps</span></button>
+    <button type="button" data-go="shop"><b>04</b><strong>Explore examples</strong><span>Consider budget and duplicates</span></button>
+    <button type="button" data-go="compare"><b>05</b><strong>Compare alternatives</strong><span>Review up to three concept ideas</span></button>
+    <button type="button" data-go="trail"><b>06</b><strong>Export the rationale</strong><span>Save a private decision brief</span></button>
   </div>
 </section>
 <div class="insights-overview-card"><div><div class="eyebrow">NEW · YOUR INSIGHTS</div><h2>See your routine and spending picture.</h2><p>Understand your basic step coverage, the price of products you recorded, and how different demo budgets change your suggested plan.</p></div><button class="secondary" data-go="insights">Explore my insights →</button></div>
