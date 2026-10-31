@@ -16,6 +16,20 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## Expanded concept discovery and saved comparison board
+
+**Shopping Studio** now offers 25 fictional skincare concepts spanning cleansing, moisturizers, daytime SPF and optional serums (previously 9). The same deterministic dataset is shared by Node-side rules and the frontend. Each concept has a category, example price, simple descriptive copy and visible tags — **no invented merchant, stock, medical benefit, verified SPF performance, reviews, or real transactions**. A concept named SPF 50 is merely an invented product label, not a certification or sunscreen performance claim.
+
+A responsive, keyboard-accessible discovery workspace now includes:
+- Instant search through concept names, tags, category and descriptions; category and decision-status filters; actionability/name/price sorting.
+- A per-concept **Why this label?** explanation and clear **use your shelf** distinction for covered steps.
+- A **Saved concept board** with up to six ideas, independently stored as only allowlisted concept IDs in browser `localStorage`. Saving an idea **does not** add it to cart.
+- Price comparison alongside the actual selected **demo** cart, budget meter with visible over-budget state, and clear-cart/clear-filters controls.
+- A deliberate zero-results state with a way to reset filters.
+- Mobile-responsive grid and rail layouts, focus styling and reduced-motion support.
+
+Tests cover filtering, sorting, invalid input, shortlist cap/deduplication, dataset consistency and budget-safe essential recommendations. As before, **none of this is a product efficacy engine, merchant inventory, checkout, or medical recommendation**, and no paid YouCam API calls are triggered by browsing or saving.
+
 ## New: your daily routine planner
 
 **Routine planner** is a genuine, navigable morning/evening product workspace. It connects **My Shelf** to a simple checklist: cleanser, moisturizer and daytime SPF in the morning; cleanser and moisturizer in the evening. It displays the **actual names of products the user entered**, missing steps, and today's own checkmarks. Serums, active treatments and skin scores are **not automatically translated into a schedule**. This is an organizational aid, not medical advice or a claim of product effectiveness.
