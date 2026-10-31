@@ -120,7 +120,7 @@ try{
  // and can be erased through the existing privacy group (no real provider calls).
  await desktop.goto(base+'/#/scan',{waitUntil:'networkidle'});
  await shown(desktop,'#view-scan:not(.hidden) .scan-journey');
- assert.ok((await desktop.locator('.scan-journey').innerText()).includes('You are in control'));
+ assert.ok((await desktop.locator('.scan-journey').innerText()).includes('LIVE SCAN JOURNEY'));
  await desktop.evaluate(()=>sessionStorage.setItem('routinegap_uncertain_scan_v1',JSON.stringify({kind:'submission-unknown',createdAt:Date.now()})));
  await desktop.reload({waitUntil:'networkidle'});
  await shown(desktop,'#scan-uncertain-clear');
