@@ -13,6 +13,25 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - Server-side **real Perfect Corp YouCam Skin Analysis v2.0 integration** using the documented File API (presigned upload), skin-analysis task submission and task-status polling
 - Privacy-first consent gate and a protected live-demo access code; no saved selfies or medical claims
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
+- In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
+
+## Photo requirements and useful tools
+
+Our YouCam integration uses **standard-definition (SD)** Skin Analysis V2.0. A photo must be a JPEG/PNG with **short side >=480 px** and **long side <=2,560 px**. RoutineGap caps uploads at **8 MB** (stricter than the provider's 10 MB). Ideal demo examples are **720 × 960 px** or **960 × 1,280 px**, straight-on and evenly lit, with the forehead and skin visible, no glasses or heavy makeup. A **236 × 354 px** thumbnail is unsuitable.
+
+- For a photo that is **too small or blurry**, retrieve the full-resolution original from your phone or photo library, or retake it with the camera. Increasing the pixel count of a tiny image cannot restore missing skin features, and AI upscaling may invent features.
+- For a **good-quality photo that is too large**, downsize while preserving the aspect ratio and the entire face. Check both pixel dimensions afterward.
+- [Photopea](https://www.photopea.com/) — **Image → Image Size** to inspect and reduce dimensions; see their [official tutorial](https://www.photopea.com/learn/image-size).
+- [Squoosh](https://squoosh.app/) — browser-local image resize/compression for oversized originals. Do not use beautification or generative retouching for analysis.
+
+The Skin Analysis page includes a locally hosted [accessible illustration](public/scan-photo-examples.svg) and practical guidance. Illustration images are *not* real scan inputs and results are never faked. Source: [Perfect Corp official Skin Analysis file specifications](https://docs.perfectcorp.com/reference/ai_skin_analysis/section/overview/file-specs-and-errors).
+
+### Current verified deployment
+
+- Public demo: https://routinegap-youcam.onrender.com/
+- API key: **authenticated** by Perfect Corp's free balance endpoint on October 31, 2026, after a fresh credential was configured in Render.
+- Full skin analysis: **not yet verified on a consented, eligible image**; this remains required for the final hackathon validation. Do not describe sample data as a real scan.
+- Keep the protected demo passcode private and give judges legitimate controlled access through Devpost testing instructions. Do not put credentials in screenshots, video captions, or GitHub.
 
 ## Work on this project in Codex
 
@@ -76,11 +95,11 @@ This version uses in-process rate limiting (2 requests per IP per hour and 20 pe
 ## Hackathon submission checklist
 
 - [x] Functional web app, deterministic recommendation system and test suite
-- [x] Real YouCam API implementation in code (NOT yet authenticated/verified live)
-- [ ] Redeem 1,000 units, provision `YOUCAM_API_KEY` securely
+- [x] Real YouCam API implementation in code; authentication checked against the actual provider (end-to-end scan still unverified)
+- [x] Provision a server-side YouCam API key; free live provider authentication preflight succeeded (unit redemption must be checked in your own console)
 - [ ] Run and verify a real provider-backed analysis using a consented selfie
-- [ ] Deploy to a **public, free-to-judge website** and provide test passcode privately in Devpost testing instructions
-- [ ] Upload repository to **public GitHub** (ideally with MIT license)
+- [x] Deploy public HTTPS frontend and backend at https://routinegap-youcam.onrender.com/ (provide private judge access code in appropriate testing instructions)
+- [x] Public GitHub repository with MIT license: https://github.com/betterlifestyle04-commits/routinegap-youcam
 - [ ] Add project screenshots
 - [ ] Record a **1–3-minute real-functionality** video, explain YouCam API, upload to Public YouTube/Vimeo/Youku
 - [ ] Finalize Devpost before **Monday Nov 2, 2026, 17:45 Europe/Oslo**
