@@ -86,7 +86,7 @@ test('real UI connects Insights nav, explanatory labels and slider without exter
  const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
  const html=await readFile(new URL('../public/index.html',import.meta.url),'utf8');
  const css=await readFile(new URL('../public/styles.css',import.meta.url),'utf8');
- for(const needle of ['function renderInsights()','function renderScenario(snapshot)','id="insights-budget-slider"','data-scenario-budget','data-go="insights"','Snapshot only','no tracking','state.insightBudget'])assert.ok(app.includes(needle),needle);
+ for(const needle of ['function renderInsights()','function renderScenario(snapshot)','id="insights-budget-slider"','data-scenario-budget','data-go="insights"','Snapshot only','Not longitudinal analytics','state.insightBudget'])assert.ok(app.includes(needle),needle);
  for(const needle of ['data-tab="insights"','id="view-insights"'])assert.ok(html.includes(needle));
  assert.ok(css.includes('.insights-progress-ring')&&css.includes('@media(max-width:560px)'));
  assert.ok(!app.includes('fetch("/api/insights"'));
