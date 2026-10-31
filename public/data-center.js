@@ -18,7 +18,7 @@ export function dataGroupsFor(category){
  const found=DATA_GROUPS.find(x=>x.id===category);
  return found?[found]:[];
 }
-export function describeDataState({shelf=[],sampleInventory=true,savedIds=[],compareIds=[],routineLog=null,savedLiveReport=false,pending=null,hasPhoto=false,cartIds=[]}={}){
+export function describeDataState({shelf=[],sampleInventory=true,savedIds=[],compareIds=[],routineLog=null,savedLiveReport=false,pending=null,uncertainSubmission=null,hasPhoto=false,cartIds=[]}={}){
  const actual=!sampleInventory&&Array.isArray(shelf)?shelf.length:0;
  const saved=Array.isArray(savedIds)?savedIds.length:0;
  const compared=Array.isArray(compareIds)?compareIds.length:0;
