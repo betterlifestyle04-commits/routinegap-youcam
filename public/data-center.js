@@ -10,7 +10,7 @@ export const DATA_GROUPS=Object.freeze([
   {id:'comparison',title:'Comparison shortlist',description:'Identifiers for up to three fictional concepts, separate from saved ideas.',keys:[{scope:'local',key:'routinegap_compare_ids_v1'}]},
   {id:'checklist',title:'Daily routine checkmarks',description:'Your local daily checklist state, not evidence of treatment or medical progress.',keys:[{scope:'local',key:'routinegap_routine_checklist_v1'}]},
   {id:'liveReport',title:'Optional saved live observations',description:'If you explicitly saved one, a limited real YouCam cosmetic report stored in this tab for up to 24 hours.',keys:[{scope:'session',key:'routinegap_saved_live_report_v1'}]},
-  {id:'pending',title:'Scan recovery & uncertainty',description:'A resumable task reference or a no-photo/no-secret timestamp marker when a submission response could not be confirmed. Deleting it cannot cancel a provider task.',keys:[{scope:'session',key:'routinegap_pending_scan_v1'},{scope:'session',key:'routinegap_uncertain_scan_v1'}]}
+  {id:'pending',title:'Scan recovery & uncertainty',description:'A resumable task reference or a minimal timestamp marker when submission could not be confirmed. No photo, passcode or provider ID is stored in that marker. Deleting it cannot cancel a provider task.',keys:[{scope:'session',key:'routinegap_pending_scan_v1'},{scope:'session',key:'routinegap_uncertain_scan_v1'}]}
 ]);
 export const ERASE_CATEGORIES=Object.freeze([...DATA_GROUPS.map(x=>x.id),'all']);
 export function dataGroupsFor(category){
