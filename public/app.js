@@ -930,12 +930,14 @@ async function resumePendingScan(){
   if(!state.pending)return notice('There is no saved scan to resume.',true);
   if(!state.liveEnabled)return notice('YouCam is not currently connected. Your pending session was not discarded.',true);
   if(!state.code)return notice('Enter your private demo passcode to resume the existing scan.',true);
-  state.busy=true;state.scan=null;state.scanSource=null;renderScan();
+  state.busy=true;state.scanPhase='processing';state.scanPoll=0;state.scan=null;state.scanSource=null;renderScan();
   notice('Resuming your existing YouCam task without re-uploading the photo or starting another paid request.');
   try{
     let completed=false;
     for(let i=0;i<17;i++){
       if(i>0)await new Promise(resolve=>setTimeout(resolve,7000));
+      state.scanPoll=i+1;
+      const track=document.querySelector('.scan-journey');if(track)track.outerHTML=renderScanJourney();
       const response=await fetch('/api/scan/status',{
         method:'POST',
         headers:{'Content-Type':'application/json','X-Demo-Access':state.code},
@@ -944,15 +946,15 @@ async function resumePendingScan(){
       let result;
       try{result=await response.json();}catch{throw Error('YouCam returned an unreadable task-status response. Resume this scan later.');}
       if(!response.ok){
-        if(response.status===404){savePendingScan(null);throw Error('The saved scan session expired or became invalid. Your earlier provider result could not be recovered.');}
+        if(response.status===404){savePendingScan(null);state.scanPhase='failed';throw Error('The saved scan session expired or became invalid. Your earlier provider result could not be recovered.');}
         throw Error(result.error||'Could not retrieve the existing scan. Resume the same session later.');
       }
       if(result.state==='error'){
-        savePendingScan(null);throw Error(result.message||'YouCam could not analyze the photo. A clearer original may be needed.');
+        savePendingScan(null);state.scanPhase='failed';throw Error(result.message||'YouCam could not analyze the photo. A clearer original may be needed.');
       }
       if(result.state==='success'){
         if(!Array.isArray(result.signals)||!result.signals.length)throw Error('YouCam returned no usable skin observations. The existing scan is still available for inspection.');
-        state.scan=result.signals;state.scanSource='live';savePendingScan(null);completed=true;break;
+        state.scan=result.signals;state.scanSource='live';state.scanPhase='complete';savePendingScan(null);completed=true;break;
       }
       notice('YouCam is still processing your existing task — check '+(i+1)+' of 17. You can come back and resume without re-uploading.');
     }
@@ -962,34 +964,52 @@ async function resumePendingScan(){
   finally{state.busy=false;renderScan();drawMessage();}
 }
 async function scanLive(){
-  if(state.busy)return;
-  if(state.pending)return notice('An existing scan is still pending. Resume it rather than paying for another scan; discard the saved session only if you intend to start a new one.',true);
-  if(!state.liveEnabled)return notice('The YouCam API is not currently authenticated.',true);
-  if(state.preparing)return notice('Wait for local photo preparation to finish.',true);if(!state.file)return notice('Select a suitable JPG or PNG photo first. If it is too large, use Prepare photo on this device.',true);
-  if(!state.imageReady)return notice('The selected photo must satisfy the YouCam resolution requirements before uploading.',true);
-  if(!state.consent)return notice('Photo-processing consent is required before sending your image.',true);
-  if(!state.code)return notice('Enter the protected live demo passcode.',true);
-  state.busy=true;state.scan=null;state.scanSource=null;state.goalFromScan=null;renderScan();
-  notice('Uploading your consented photo to YouCam and requesting a new skin analysis task…');
-  try{
-    const response=await fetch('/api/scan',{
-      method:'POST',
-      headers:{'Content-Type':state.file.type,'X-Image-Filename':state.file.name,
-        'X-Skin-Consent':'yes','X-Demo-Access':state.code},
-      body:state.file
-    });
-    let data;
-    try{data=await response.json();}catch{throw Error('The server returned an unreadable response. Check with the project owner before sending the photo again.');}
-    if(!response.ok)throw Error(data.error||'Could not start the YouCam scan.');
-    if(!data.receipt)throw Error('The provider task was started but no recovery receipt was returned. Contact the owner before resubmitting the photo.');
-    savePendingScan({receipt:data.receipt,createdAt:Date.now()});
-    // Starting a new provider task invalidates any explicitly saved older report.
-    try{sessionStorage.removeItem(LIVE_REPORT_SESSION_KEY);}catch{}
-    state.savedLiveReport=false;
-    notice('The task started. Your private recovery receipt is saved for this tab. No second upload is needed.');
-  }catch(error){notice(error?.message||'The scan could not start. No sample result was substituted.',true);}
-  finally{state.busy=false;renderScan();drawMessage();}
-  if(state.pending)await resumePendingScan();
+ if(state.busy)return;
+ if(state.uncertainSubmission)return notice('An earlier upload may already have started a paid task. Verify provider activity before starting another.',true);
+ if(state.pending)return notice('An existing task has a recovery receipt. Resume it rather than paying for another scan.',true);
+ if(!state.liveEnabled)return notice('The YouCam API is not currently authenticated.',true);
+ if(state.preparing)return notice('Wait for local photo preparation to finish.',true);
+ if(!state.file)return notice('Select a suitable JPG or PNG photo first.',true);
+ if(!state.imageReady)return notice('The photo must meet YouCam resolution requirements.',true);
+ if(!state.consent)return notice('Photo-processing consent is required before sharing the image.',true);
+ if(!state.code)return notice('Enter the protected live demo passcode.',true);
+ state.busy=true;state.scanPhase='uploading';state.scanPoll=0;
+ state.scan=null;state.scanSource=null;state.goalFromScan=null;renderScan();
+ notice('Sending your explicitly consented photo. Do not submit again if this request is interrupted.');
+ let response=null,unreadable=false,taskStarted=false;
+ try{
+  response=await fetch('/api/scan',{
+   method:'POST',headers:{'Content-Type':state.file.type,'X-Image-Filename':state.file.name,
+    'X-Skin-Consent':'yes','X-Demo-Access':state.code},body:state.file,
+   signal:AbortSignal.timeout(90000)
+  });
+  let data;
+  try{data=await response.json();}catch{unreadable=true;throw Error('The scan submission response could not be read.');}
+  const outcome=classifyStartResponse({status:response.status,receipt:data?.receipt});
+  if(outcome==='rejected')throw Error(data?.error||'The server declined the scan. Check the stated requirement before retrying.');
+  if(outcome!=='started')throw Error('The scan response was missing a valid recovery receipt.');
+  const persisted=savePendingScan({receipt:data.receipt,createdAt:Date.now()});
+  saveUncertainSubmission(null);
+  taskStarted=true;state.scanPhase='processing';
+  // Starting a new task invalidates any previously saved older cosmetic observations.
+  try{sessionStorage.removeItem(LIVE_REPORT_SESSION_KEY);}catch{}
+  state.savedLiveReport=false;
+  notice(persisted?'YouCam returned a task receipt, stored in this tab. Resume checks without another upload.':'YouCam returned a task receipt, but this browser blocked tab storage. Keep this page open and do not resubmit.');
+ }catch(error){
+  const outcome=classifyStartResponse({status:response?.status??null,networkFailure:response===null,unreadable});
+  if(outcome==='uncertain'){
+   const stored=saveUncertainSubmission(newUncertainMarker());
+   state.scanPhase='uncertain';
+   notice('Submission outcome unknown: a YouCam task may already exist. Do not upload the photo again until the owner checks provider activity.'+
+     (stored?' A receipt-free warning was saved in this tab for 24 hours.':' This browser could not preserve the warning after a reload.'),true);
+  }else{
+   state.scanPhase='idle';
+   notice(error?.message||'The server declined this request. No example result was substituted.',true);
+  }
+ }finally{
+  state.busy=false;renderScan();drawMessage();
+ }
+ if(taskStarted&&state.pending)await resumePendingScan();
 }
 
 function saveLiveReportInTab(){
