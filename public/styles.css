@@ -73,3 +73,9 @@
 .local-prep-action p{line-height:1.6;margin:0;max-width:480px;color:#486556;font-size:12px}
 .local-prep-action button[disabled]{opacity:.68;cursor:wait}
 @media(max-width:650px){.local-prep-action{padding:13px 11px}}
+
+/* Privacy-preserving, evidence-labeled local report export */
+.report-export-action{display:flex;flex-direction:column;gap:9px;margin:16px 0;padding:15px 14px;border-radius:13px;background:#eef5ed;border:1px solid #d0e0cf}
+.report-export-action .secondary{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;max-width:100%}
+.report-export-action p{margin:0;line-height:1.65}
+@media(max-width:680px){.report-export-action .secondary{white-space:normal;text-align:left}}
