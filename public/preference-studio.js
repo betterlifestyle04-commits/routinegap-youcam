@@ -2,7 +2,7 @@
  * Browser-local preference studio. Pure functions; no accounts, uploads,
  * YouCam requests or permanent profile fields beyond existing preferences.
  */
-import {evaluateShop,goals,stepLabels} from '../src/recommendations.js';
+import {evaluateShop,goals,stepLabels} from './recommendations.js';
 export const PREF_STAGES=Object.freeze([
  {id:'focus',title:'Choose your cosmetic focus',subtitle:'A preference you choose, not an inferred skin diagnosis.'},
  {id:'budget',title:'Define your example budget',subtitle:'Concept prices are illustrative USD, not live retailer offers.'},
