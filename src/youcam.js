@@ -27,7 +27,7 @@ function signedUploadUrl(url){
   try{target=new URL(url);}catch{throw new YouCamError('Invalid signed upload URL from YouCam.');}
   // Allow only HTTPS uploads directly to actual AWS S3 endpoints, never user-supplied hosts.
   if(target.protocol!=='https:'||target.username||target.password||target.port||url.length>8192||
-     !/(?:^|\\.)s3(?:[.-][a-z0-9-]+)?\\.amazonaws\\.com$/.test(target.hostname))
+     !/(?:^|\.)s3(?:[.-][a-z0-9-]+)?\.amazonaws\.com$/.test(target.hostname))
     throw new YouCamError('Unexpected provider file upload destination.');
   return url;
 }
