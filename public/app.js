@@ -1,6 +1,7 @@
 import {catalog,goals,stepLabels,sampleShelf,sampleScan,normalizeShelf,evaluateShop} from '/recommendations.js';
 import {ROUTINE_LOG_KEY,localRoutineDate,buildRoutinePlan,readRoutineLog,toggleRoutineStep,routineProgress} from '/routine-planner.js';
 import {SAVED_CONCEPTS_KEY,MAX_SAVED_CONCEPTS,FILTER_STEPS,FILTER_DECISIONS,SORT_OPTIONS,normalizeSavedConcepts,toggleSavedConcept,discoverConcepts} from '/catalog-discovery.js';
+import {makeShelfBackup,readShelfBackup,SHELF_BACKUP_MAX_BYTES,SHELF_LIMIT,shelfSummary} from '/shelf-transfer.js';
 import {planLocalPhoto,preparePhotoLocally,PHOTO_SOURCE_MAX_BYTES} from '/photo-tools.js';
 import {createDecisionBrief} from '/report-export.js';
 import {makePrivateReport,readPrivateReport,LIVE_REPORT_SESSION_KEY} from '/report-session.js';
@@ -32,7 +33,7 @@ function savePendingScan(pending){
   try{if(pending)sessionStorage.setItem(PENDING_SCAN_KEY,JSON.stringify(pending));
       else sessionStorage.removeItem(PENDING_SCAN_KEY);}catch{}
 }
-const state={tab:'overview',savedIds:(()=>{try{return normalizeSavedConcepts(localStorage.getItem(SAVED_CONCEPTS_KEY),catalog);}catch{return [];}})(),catalogQuery:'',catalogStep:'all',catalogDecision:'all',catalogSort:'recommended',savedOnly:false,affordableOnly:false,routineLog:(()=>{try{return localStorage.getItem(ROUTINE_LOG_KEY);}catch{return null;}})(),shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:savedLiveReport?.signals||null,scanSource:savedLiveReport?'live':null,savedLiveReport:!!savedLiveReport,cartIds:[],file:null,sourceFile:null,preview:null,imageReady:false,imageDimensions:null,canPrepare:false,preparing:false,photoPlan:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false,goalFromScan:null};
+const state={tab:'overview',shelfQuery:'',editingId:null,undoShelf:null,savedIds:(()=>{try{return normalizeSavedConcepts(localStorage.getItem(SAVED_CONCEPTS_KEY),catalog);}catch{return [];}})(),catalogQuery:'',catalogStep:'all',catalogDecision:'all',catalogSort:'recommended',savedOnly:false,affordableOnly:false,routineLog:(()=>{try{return localStorage.getItem(ROUTINE_LOG_KEY);}catch{return null;}})(),shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:savedLiveReport?.signals||null,scanSource:savedLiveReport?'live':null,savedLiveReport:!!savedLiveReport,cartIds:[],file:null,sourceFile:null,preview:null,imageReady:false,imageDimensions:null,canPrepare:false,preparing:false,photoPlan:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false,goalFromScan:null};
 try{const saved=JSON.parse(localStorage.getItem('routinegap_state')||'null');if(saved&&typeof saved==='object'){
   state.shelf=normalizeShelf(saved.shelf);state.budget=Number.isFinite(saved.budget)?Math.max(0,Math.min(1000,saved.budget)):60;state.goal=goals.some(g=>g.id===saved.goal)?saved.goal:'moisture';state.fragranceFree=saved.fragranceFree===true;state.sampleInventory=saved.sampleInventory===true;
 }}catch{}
@@ -46,8 +47,25 @@ function render(){document.querySelectorAll('.view').forEach(el=>el.classList.to
   const d=decide();const titles={overview:renderOverview,scan:renderScan,shelf:renderShelf,routine:renderRoutine,shop:renderShop,trail:renderTrail};titles[state.tab](d);drawMessage();$('#provider-chip').textContent=state.liveEnabled?'● YouCam API key authenticated':state.providerConnection==='failed'?'● YouCam authentication failed':state.providerConnection==='checking'?'● Checking YouCam credentials':'● Sample mode available';
 }
 const title=(eyebrow,h1,subtitle)=>`<div class="page-heading"><div class="eyebrow">${eyebrow}</div><h1>${h1}</h1><p>${subtitle}</p></div>`;
+function renderWorkspaceHub(d) {
+  const snap=shelfSummary(d.owned,state.sampleInventory,state.savedIds.length);
+  const cards=[
+    {step:'01',name:'Make your shelf yours',hint:snap.real?snap.ownedCount+' real items saved on this device':'Starter products are illustrative until you add your own',go:'shelf',cta:snap.real?'Manage inventory':'Add real products',done:snap.real},
+    {step:'02',name:'Understand routine coverage',hint:snap.real?snap.coveredCount+' of 3 basic steps represented · '+snap.missingCount+' gaps to review':'Explore an example morning/evening planner before setup',go:'routine',cta:'Open daily planner',done:snap.real&&snap.coveredCount===3},
+    {step:'03',name:'Compare before spending',hint:snap.savedCount?snap.savedCount+' saved concepts, not purchased':'Explore examples and save concepts privately',go:'shop',cta:'Browse concepts',done:snap.savedCount>0}
+  ];
+  return `<section class="workspace-hub" aria-label="Getting started with RoutineGap">
+    <div class="workspace-hub-heading"><div><div class="eyebrow">YOUR WORKSPACE · GET STARTED</div><h2>Everything you need, in one place.</h2>
+    <p>Start with your actual products, see which routine steps they cover, and explore options only if you want to. This workspace works without an account or skin scan.</p></div>
+    <span class="workspace-setup-chip">${snap.real?'PERSONAL SHELF ACTIVE':'ILLUSTRATIVE PREVIEW'}</span></div>
+    <div class="workspace-hub-grid">${cards.map(c=>`<button type="button" class="workspace-hub-card" data-go="${c.go}"><span class="workspace-step-num">${c.step} ${c.done?'<span aria-label="Ready">✓</span>':''}</span>
+      <strong>${escape(c.name)}</strong><small>${escape(c.hint)}</small><em>${escape(c.cta)} →</em></button>`).join('')}</div>
+    <p class="workspace-data-note">Your product list, preferences, and saved concepts stay in this browser. Sample inventory does not count as real ownership. A YouCam scan is optional and requires separate explicit consent.</p>
+  </section>`;
+}
 function renderOverview(d){const selectedCart=d.rows.filter(x=>state.cartIds.includes(x.id));const selectedTotal=selectedCart.reduce((sum,item)=>sum+item.price,0);$('#view-overview').innerHTML=`<div class="hero"><div class="page-kicker"><span class="dot"></span><span class="eyebrow" style="color:#d9e9ca">THE SMARTER SKINCARE EDIT</span></div><h1>Your shelf first.<br><em>Shop smarter.</em></h1><p>Your next best skincare purchase might be one you don't need. Understand your cosmetic skin signals, see what you already have, and spend with intention.</p><button class="primary" data-go="scan">Start my skin-aware session →</button><div class="hero-art" aria-hidden="true"></div><div class="hero-orbit" aria-hidden="true"></div></div>
 <div class="stats"><div class="stat"><span>Products on your shelf</span><strong>${d.owned.length}</strong><small>${state.sampleInventory?'Illustrative sample inventory':'Your saved local inventory'}</small></div><div class="stat"><span>Your selected demo cart</span><strong>${money(selectedTotal)}</strong><small>${selectedTotal>d.budget?'Over budget by '+money(selectedTotal-d.budget):state.cartIds.length?'Within '+money(d.budget)+' budget':'No selections yet · Suggested '+money(d.cartTotal)}</small></div><div class="stat"><span>Duplicate purchases avoided</span><strong>${d.skippedRedundant}</strong><small>Illustrative catalog options screened</small></div></div>
+${renderWorkspaceHub(d)}
 <section class="demo-journey" aria-label="Guided RoutineGap walkthrough">
   <div class="demo-journey-lead"><div><div class="eyebrow">THE 60-SECOND JUDGE WALKTHROUGH</div>
     <h2>See the full decision journey</h2><p>Explore a labeled example without uploading a face photo, entering a passcode, or using YouCam API credits. The demo is not evidence of a completed live scan.</p>
