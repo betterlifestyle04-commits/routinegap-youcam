@@ -16,6 +16,18 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## New: My Insights — truthful local analytics and budget scenarios
+
+**My Insights** is now a first-class workspace in the RoutineGap navigation, with a premium responsive visual layout, coverage ring, four metrics, category breakdowns, and an interactive budget simulator. A dashboard call-to-action links into it.
+
+- **Actual shelf provenance**: coverage is determined only by product types explicitly saved by the user. The fictional starter shelf is excluded from *personal* metrics; a clean local shelf honestly shows zero ownership and no represented basic categories.
+- **Meaningful, bounded data**: item counts and recorded purchase-price sums per cleanser, moisturizer, daily SPF and optional serum; 0–3 basic-category coverage; existing fictional catalog matches considered redundant; the number of saved example concepts and the actual selected demo cart's amount. Recorded prices do **not** establish verified transactions or true market value.
+- **What-if budget lab**: move a slider or choose presets to see a deterministic, essentials-first selection from the fictional catalog. It shows a proposed example total, unused demo budget and any remaining missing categories. **It never changes** the user's actual shopping budget, cart, saved concepts, routine checks or inventory. No provider calls, account, telemetry or premium API usage.
+- **Explicit trust boundaries**: this is a current browser snapshot, **not** a behavioral trend, clinically determined routine, proven savings, merchant quote, efficacy estimate or historical analytics system. YouCam cosmetic scores are not used to fabricate product outcomes.
+- **Accessibility**: navigation is keyboard accessible; mobile layouts collapse gracefully; the coverage ring provides a descriptive ARIA label and numerical progress; the simulator exposes an accessible range input and live result region. There is also a restrained print stylesheet.
+
+Automated tests verify real versus illustrative attribution, exact categories and costs, missing essentials, budget bounds, cart separation, immutable what-if calculations, and UI wiring.
+
 ## New: personal shelf workspace, safe backups, and guided onboarding
 
 The Overview dashboard now contains a **truthful getting-started workspace** that explains the path from a user-entered shelf to routine coverage and optional shopping exploration. Its status is derived from actual browser state: the fictional starter shelf is always identified as **illustrative**, not mistakenly counted as user-owned inventory or a completed live scan.
