@@ -97,6 +97,7 @@ ${renderWorkspaceHub(d)}
   </div>
 </section>
 <div class="insights-overview-card"><div><div class="eyebrow">NEW · YOUR INSIGHTS</div><h2>See your routine and spending picture.</h2><p>Understand your basic step coverage, the price of products you recorded, and how different demo budgets change your suggested plan.</p></div><button class="secondary" data-go="insights">Explore my insights →</button></div>
+<div class="privacy-overview-bridge"><div><div class="eyebrow">PRIVACY · UNDER YOUR CONTROL</div><h2>Know what your browser remembers.</h2><p>Review stored data, export your shelf and clear records you no longer need.</p></div><button class="secondary" data-go="privacy">Open Privacy & Data →</button></div>
 <div class="routine-overview-callout"><div><div class="eyebrow">NEW · DAILY ROUTINE PLANNER</div><h2>From your shelf to your everyday routine.</h2><p>Make a morning and evening checklist from what you own. Only your own checkmarks count, not illustrative sample items.</p></div><button class="primary" data-go="routine">Open routine planner →</button></div>
 <div class="section-title"><h2>Today's smart decisions</h2><button class="tiny-btn" data-go="shop">Open shopping studio ↗</button></div><div class="two-col"><div class="panel"><div class="eyebrow">SHELF AUDIT</div><h3 style="margin-top:9px">${d.missingSteps.length?'Room for a smarter routine':'Your essentials are covered'}</h3><p class="muted">${escape(d.message)} We start with what you own, before recommending anything to buy.</p>${['cleanser','moisturizer','spf'].map(s=>`<div class="list-row"><span>${escape(stepLabels[s])}</span><span class="label-pill ${d.owned.some(x=>x.step===s)?'':'peach'}">${d.owned.some(x=>x.step===s)?'IN YOUR SHELF':'POTENTIAL GAP'}</span></div>`).join('')}<div class="panel-actions"><button class="secondary" data-go="shelf">Review my shelf →</button></div></div><div class="panel"><div class="eyebrow">WHY IT MATTERS</div><h3 style="margin-top:9px">Clarity before checkout</h3><p class="muted">Connect a real YouCam Skin Analysis session to review cosmetic observations, or preview the workflow with clearly labeled example data.</p><div class="list-row"><span>Skin analysis</span>${markMode()}</div><div class="list-row"><span>Live provider configuration</span><span class="label-pill ${state.liveEnabled?'':'peach'}">${state.liveEnabled?'KEY AUTHENTICATED':state.providerConnection==='failed'?'AUTHENTICATION FAILED':state.providerConnection==='checking'?'CHECKING API KEY':'NOT CONNECTED'}</span></div><div class="list-row"><span>Recommendation logic</span><span class="label-pill">TRANSPARENT RULES</span></div><div class="panel-actions"><button class="secondary" data-go="scan">View skin studio →</button></div></div></div>`;}
 function renderLiveReportSaveControls(reports){
@@ -466,6 +467,58 @@ function renderCompare(){
  </section><div class="compare-safety-note"><div><div class="eyebrow">IMPORTANT CONTEXT</div><h3>What this comparison does not claim</h3><p>No verified ingredients, clinical outcomes, skin compatibility, sunscreen effectiveness, merchant availability, ratings, or live checkout. YouCam observations remain separate from product efficacy claims. Your selected IDs are stored only in this browser.</p></div><button class="tiny-btn" data-go="shelf">Review real shelf →</button></div>`;
  renderComparePicker();
 }
+function renderPrivacy(){
+ const data=describeDataState({shelf:state.shelf,sampleInventory:state.sampleInventory,savedIds:state.savedIds,compareIds:state.compareIds,routineLog:state.routineLog,savedLiveReport:state.savedLiveReport,pending:state.pending,hasPhoto:!!state.file||!!state.preview,cartIds:state.cartIds});
+ const presence=readStoragePresence(localStorage,sessionStorage);
+ const rows=data.groups.map(group=>{
+  const stored=presence.find(p=>p.id===group.id)||{};
+  const status=stored.unavailable?'STORAGE RESTRICTED':stored.exists?'STORED LOCALLY':'NOT STORED';
+  const symbols={shelf:'▧',ideas:'♡',comparison:'⇄',checklist:'☑',liveReport:'◎',pending:'◌'};
+  return `<div class="privacy-row">
+   <span class="privacy-row-symbol" aria-hidden="true">${symbols[group.id]}</span>
+   <div class="privacy-row-content"><div class="privacy-row-head"><strong>${escape(group.title)}</strong><span class="privacy-data-status ${stored.exists?'stored':''}">${status}</span></div>
+   <p>${escape(group.description)}</p><small>${escape(group.status)} · ${group.keys[0].scope==='session'?'This browser tab':'This browser'}</small></div>
+   <button class="tiny-btn" data-privacy-erase="${group.id}" type="button" ${!stored.exists||stored.unavailable?'disabled':''}>Erase</button></div>`;
+ }).join('');
+ const metrics=[['Owned products',String(data.realProducts),state.sampleInventory?'Example shelf excluded':'Your actual entries'],
+ ['Saved ideas',String(state.savedIds.length),'Fictional concepts'],
+ ['Comparisons',String(state.compareIds.length),'Separate from demo cart'],
+ ['Photo in memory',data.hasPhoto?'Yes':'No','Not saved locally by this app']];
+ const stats=metrics.map(item=>`<div><span>${escape(item[0])}</span><strong>${escape(item[1])}</strong><small>${escape(item[2])}</small></div>`).join('');
+ $('#view-privacy').innerHTML=title('YOUR CONTROL','Privacy & data center','See what this browser remembers, export real shelf entries, and erase only the RoutineGap data you choose. Browser erasure never deletes provider-side records or previously downloaded files.')+
+ `<section class="privacy-hero"><div><div class="eyebrow">CLARITY · CONTROL · CONSENT</div><h2>It is your routine. <em>It is your data.</em></h2>
+ <p>Everyday preferences stay in this browser. Uploading an image for a real YouCam analysis is a separate, optional action that sends the selected image to Perfect Corp.</p>
+ <div class="privacy-hero-actions"><button class="primary" data-go="shelf">Manage my shelf →</button><button class="ghost" data-go="scan">Review scan consent →</button></div></div><span class="privacy-hero-icon" aria-hidden="true">◉</span></section>
+ <div class="privacy-stats">${stats}</div>
+ <div class="privacy-layout"><section class="panel privacy-main-panel"><div class="eyebrow">YOUR BROWSER STORAGE</div><h2>Choose what to keep.</h2>
+ <p class="muted small">Data is divided into independent groups. Delete an individual group or remove every known RoutineGap browser key. Changes are confirmed before deletion.</p>
+ <div class="privacy-rows">${rows}</div><div class="privacy-danger-area"><p>Deleting local data reloads the application and also clears temporary in-memory photo selections. It cannot reverse an already submitted live scan.</p>
+ <button id="privacy-clear-all" type="button" class="privacy-danger-button">Erase all RoutineGap browser data →</button></div></section>
+ <aside class="privacy-side"><section class="privacy-card privacy-export"><div class="eyebrow">DOWNLOAD A COPY</div><h3>Your inventory is portable.</h3>
+ <p>Export your own shelf products and preferences as validated JSON. Backups never include selfies, scan observations, API keys or task references.</p>
+ <button type="button" class="secondary" id="privacy-export-shelf" ${state.sampleInventory?'disabled title="Sample inventory is not genuine ownership"':''}>↓ Export real shelf (.json)</button>
+ <button type="button" class="tiny-btn" id="privacy-export-brief">↓ Export decision brief (.md)</button></section>
+ <section class="privacy-card"><div class="eyebrow">WHAT GOES WHERE</div><h3>Data lifecycle</h3>
+ <div class="privacy-flow"><div><b>01 · Local workspace</b><p>Products, saved concept IDs, checklist data, and preferences are stored in this browser, not sent to YouCam for shopping.</p></div>
+ <div><b>02 · Opt-in skin scan</b><p>A selected face photo is transmitted to Perfect Corp only after the separate scan-consent action. A resumable task reference can remain in this tab.</p></div>
+ <div><b>03 · Export and erasure</b><p>Downloads stay on your device. Removing browser storage does not remove uploaded images or revoke already-running provider tasks.</p></div></div></section></aside></div>
+ <section class="privacy-reminder"><div><div class="eyebrow">IMPORTANT LIMITATION</div><h2>Local deletion ≠ provider deletion.</h2>
+ <p>If a live scan was submitted, clearing a browser reference does not cancel it or remove data already processed by Perfect Corp. Deletion of provider-held information requires the provider's applicable process.</p></div>
+ <button data-go="scan" class="secondary">Go to skin analysis →</button></section>`;
+}
+function erasePrivacyData(category){
+ if(!ERASE_CATEGORIES.includes(category))return;
+ const all=category==='all';
+ const name=all?'all RoutineGap browser data':DATA_GROUPS.find(g=>g.id===category).title.toLowerCase();
+ const providerWarning=['all','pending','liveReport'].includes(category)?' This does not cancel a remote YouCam task or remove any provider-side image or report.':'';
+ const prompt='Erase '+name+' permanently on this device?'+providerWarning+' This cannot be undone.';
+ if(!window.confirm(prompt))return;
+ try{
+  const result=eraseOwnedStorage(category,{local:localStorage,session:sessionStorage});
+  if(!result.removedKeys.length)throw new Error('No browser keys were selected.');
+  window.location.reload();
+ }catch(error){notice(error.message||'Could not verify deletion. Please check browser storage settings.',true);renderPrivacy();}
+}
 function renderTrail(d){const rows=[{n:'01',title:'Cosmetic observation',body:state.scanSource==='live'?'Real YouCam Skin Analysis observations were returned. These vendor scores are not diagnoses.':state.scanSource==='sample'?'You selected a labeled illustrative scan. None of these scores came from the live API.':'No scan result yet. Your choices rely solely on your own stated preferences.'},{n:'02',title:'Your stated preference',body:`You chose “${goals.find(g=>g.id===state.goal)?.name||'Simple routine'}” as a shopping goal. ${state.goalFromScan?'You explicitly selected this after viewing '+(state.goalFromScan==='live'?'your real YouCam report':'an illustrative example')+'. ':''}This goal is user-selected, not inferred as a medical condition or diagnosis.`},{n:'03',title:'What you already own',body:`You have ${d.owned.length} products recorded. Routine steps in your shelf: ${[...new Set(d.owned.map(x=>stepLabels[x.step]))].join(', ')||'none yet'}.`},{n:'04',title:'Budget & exclusions',body:`We use your ${money(d.budget)} spending limit and ${state.fragranceFree?'restrict the illustrative catalog to products tagged fragrance-free':'do not apply a fragrance-free catalog filter'}.`},{n:'05',title:'Why we skip duplicates',body:`${d.skippedRedundant} catalog options match steps you already own. Our conservative heuristic says “Use your shelf” for those steps.`},{n:'06',title:'Human decision',body:'Any cart selections are yours. Neither the YouCam scores nor RoutineGap can establish treatment efficacy, allergy safety or what is medically appropriate.'}];$('#view-trail').innerHTML=`${title('EXPLAINABILITY','The decision trail','A full breakdown of where each shopping suggestion comes from. We separate provider-generated observations from human preferences and product-matching rules.')}
 <div class="two-col"><div class="panel"><div class="eyebrow">THE LOGIC, STEP BY STEP</div><div style="margin-top:22px">${rows.map(x=>`<div class="trail-step"><span class="num">${x.n}</span><div class="timeline-card"><strong>${escape(x.title)}</strong><p class="muted small">${escape(x.body)}</p></div></div>`).join('')}</div></div><div><div class="panel"><div class="eyebrow">TRANSPARENCY LABELS</div><div class="list-row"><span>YouCam cosmetic scores</span><span class="label-pill">VENDOR OUTPUT, IF LIVE</span></div><div class="list-row"><span>Shopping priorities</span><span class="label-pill peach">USER PREFERENCES</span></div><div class="list-row"><span>Duplicate detection</span><span class="label-pill">DETERMINISTIC HEURISTIC</span></div><div class="list-row"><span>Catalog prices</span><span class="label-pill peach">ILLUSTRATIVE</span></div><div class="separator"></div><p class="muted small">The provider describes UI scores as cosmetically adjusted presentation scores. We show them as received and do not present them as probability, clinical severity, or causal evidence that a product will work.</p><div class="report-export-action"><button type="button" class="secondary" id="export-decision"><span aria-hidden="true">↓</span> Download decision brief (.md)</button><p class="muted small">Save a local report of your cosmetic observations, chosen priorities, current shelf, duplicates, and real cart-versus-budget total. Clearly labels sample data and excludes your photo and all credentials.</p></div><button class="secondary" data-go="shop">Back to shopping →</button></div><div class="panel" style="margin-top:18px"><h3>Privacy by design</h3><p class="muted small">Skin photos remain in browser memory until you explicitly request live analysis. On live analysis the photo is sent to Perfect Corp using its documented file upload flow. We do not store photo files in our application's database. For privacy, do not use another person's photo without consent. Remove browser-owned inventory from My Shelf at any time.</p><p class="muted small">YouCam API documentation: <a target="_blank" rel="noopener noreferrer" href="https://docs.perfectcorp.com/reference/ai_skin_analysis">Skin Analysis reference ↗</a></p></div></div></div>`;}
 function updatePrefs(){const x=$('#budget'),y=$('#goal'),z=$('#fragrance');if(!x||!y||!z)return;state.budget=Math.max(0,Math.min(1000,Number(x.value)||0));state.goal=y.value;state.goalFromScan=null;state.fragranceFree=z.checked;state.cartIds=[];persist();renderShop(decide());}
@@ -732,6 +785,10 @@ document.addEventListener('click',event=>{
    notice('You chose the cosmetic focus yourself. Recommendations now use your selected preference, budget and owned products—not automated diagnosis or a promise that a product works.');
    return;
  }
+ const eraser=event.target.closest('[data-privacy-erase]');if(eraser){erasePrivacyData(eraser.dataset.privacyErase);return;}
+ if(event.target.closest('#privacy-clear-all')){erasePrivacyData('all');return;}
+ if(event.target.closest('#privacy-export-shelf'))return downloadShelfBackup();
+ if(event.target.closest('#privacy-export-brief'))return downloadDecisionBrief();
  const compare=event.target.closest('[data-compare]');if(compare){const id=compare.dataset.compare;const changed=toggleCompareId(state.compareIds,id,catalog);if(changed.limitReached)return notice('Compare up to '+MAX_COMPARE+' concepts at once. Remove one before adding another.',true);state.compareIds=changed.ids;try{localStorage.setItem(COMPARE_KEY,JSON.stringify(state.compareIds));}catch{notice('Comparison may not persist if browser storage is unavailable.',true);}if(state.tab==='compare'){renderCompare();$('#compare-candidate-list [data-compare="'+id+'"]')?.focus({preventScroll:true});}else if(state.tab==='shop')renderShop(decide());return;}
  if(event.target.closest('#compare-clear')){state.compareIds=[];try{localStorage.removeItem(COMPARE_KEY);}catch{}renderCompare();notice('Comparison cleared on this device. Your saved board and cart are unchanged.');return;}
  if(event.target.closest('#compare-reset-filters')){state.compareQuery='';state.compareStep='all';renderCompare();return;}
