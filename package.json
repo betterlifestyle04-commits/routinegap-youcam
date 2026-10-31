@@ -10,6 +10,6 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test test/*.test.js",
-    "check": "node --check server.js && node --check public/app.js && node --check src/youcam.js && node --check src/recommendations.js && node --check public/report-export.js && node --check public/photo-tools.js && node --check src/scan-status.js && node --check public/report-session.js && node --check public/routine-planner.js"
+    "check": "node --check server.js && node --check public/app.js && node --check src/youcam.js && node --check src/recommendations.js && node --check public/report-export.js && node --check public/photo-tools.js && node --check src/scan-status.js && node --check public/report-session.js && node --check public/routine-planner.js && node --check public/catalog-discovery.js"
   }
 }
