@@ -51,6 +51,9 @@ test('sample starter shelf can never be misrepresented as genuinely owned',()=>{
  assert.equal(d.duplicate,false);
  assert.deepEqual(d.existing,[]);
  assert.equal(d.sampleInventory,true);
+ assert.equal(d.demoCovered,true);
+ assert.equal(d.storyLabel,'SAMPLE SCENARIO OVERLAP');
+ assert.match(d.reason,/NOT evidence of ownership/);
 });
 test('demo budget is strictly bounded and individually evaluated, never a real offer',()=>{
  const low=story('mineral-spf',{shelf:[],budget:10});
