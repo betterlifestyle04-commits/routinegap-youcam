@@ -1,6 +1,7 @@
 import {catalog,goals,stepLabels,sampleShelf,sampleScan,normalizeShelf,evaluateShop} from '/recommendations.js';
 import {ROUTINE_LOG_KEY,localRoutineDate,buildRoutinePlan,readRoutineLog,toggleRoutineStep,routineProgress} from '/routine-planner.js';
 import {SAVED_CONCEPTS_KEY,MAX_SAVED_CONCEPTS,FILTER_STEPS,FILTER_DECISIONS,SORT_OPTIONS,normalizeSavedConcepts,toggleSavedConcept,discoverConcepts} from '/catalog-discovery.js';
+import {makeShelfBackup,readShelfBackup,SHELF_BACKUP_MAX_BYTES,SHELF_LIMIT,shelfSummary} from '/shelf-transfer.js';
 import {planLocalPhoto,preparePhotoLocally,PHOTO_SOURCE_MAX_BYTES} from '/photo-tools.js';
 import {createDecisionBrief} from '/report-export.js';
 import {makePrivateReport,readPrivateReport,LIVE_REPORT_SESSION_KEY} from '/report-session.js';
@@ -32,7 +33,7 @@ function savePendingScan(pending){
   try{if(pending)sessionStorage.setItem(PENDING_SCAN_KEY,JSON.stringify(pending));
       else sessionStorage.removeItem(PENDING_SCAN_KEY);}catch{}
 }
-const state={tab:'overview',savedIds:(()=>{try{return normalizeSavedConcepts(localStorage.getItem(SAVED_CONCEPTS_KEY),catalog);}catch{return [];}})(),catalogQuery:'',catalogStep:'all',catalogDecision:'all',catalogSort:'recommended',savedOnly:false,affordableOnly:false,routineLog:(()=>{try{return localStorage.getItem(ROUTINE_LOG_KEY);}catch{return null;}})(),shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:savedLiveReport?.signals||null,scanSource:savedLiveReport?'live':null,savedLiveReport:!!savedLiveReport,cartIds:[],file:null,sourceFile:null,preview:null,imageReady:false,imageDimensions:null,canPrepare:false,preparing:false,photoPlan:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false,goalFromScan:null};
+const state={tab:'overview',shelfQuery:'',editingId:null,undoShelf:null,savedIds:(()=>{try{return normalizeSavedConcepts(localStorage.getItem(SAVED_CONCEPTS_KEY),catalog);}catch{return [];}})(),catalogQuery:'',catalogStep:'all',catalogDecision:'all',catalogSort:'recommended',savedOnly:false,affordableOnly:false,routineLog:(()=>{try{return localStorage.getItem(ROUTINE_LOG_KEY);}catch{return null;}})(),shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:savedLiveReport?.signals||null,scanSource:savedLiveReport?'live':null,savedLiveReport:!!savedLiveReport,cartIds:[],file:null,sourceFile:null,preview:null,imageReady:false,imageDimensions:null,canPrepare:false,preparing:false,photoPlan:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false,goalFromScan:null};
 try{const saved=JSON.parse(localStorage.getItem('routinegap_state')||'null');if(saved&&typeof saved==='object'){
   state.shelf=normalizeShelf(saved.shelf);state.budget=Number.isFinite(saved.budget)?Math.max(0,Math.min(1000,saved.budget)):60;state.goal=goals.some(g=>g.id===saved.goal)?saved.goal:'moisture';state.fragranceFree=saved.fragranceFree===true;state.sampleInventory=saved.sampleInventory===true;
 }}catch{}
@@ -42,12 +43,29 @@ function notice(msg,error=false){state.feedback=msg;state.isError=error;drawMess
 function drawMessage(){const html=state.feedback?`<div class="notice ${state.isError?'error':''}" role="status">${escape(state.feedback)}</div>`:'';const el=$('#message');if(el)el.innerHTML=html;const local=$('#scan-status');if(local)local.innerHTML=state.tab==='scan'?html:'';}
 const markMode=()=>state.scanSource==='live'?'<span class="label-pill">REAL YOUCAM RESULT</span>':state.scanSource==='sample'?'<span class="label-pill peach">ILLUSTRATIVE SAMPLE • NOT YOUCAM</span>':'<span class="label-pill peach">NO SCAN YET</span>';
 function navigate(tab){if(!['overview','scan','shelf','routine','shop','trail'].includes(tab))return;state.tab=tab;render();window.scrollTo({top:0,behavior:'smooth'});$('#main')?.focus({preventScroll:true});}
-function render(){document.querySelectorAll('.view').forEach(el=>el.classList.toggle('hidden',el.id!==`view-${state.tab}`));document.querySelectorAll('.nav-link').forEach(el=>el.classList.toggle('active',el.dataset.tab===state.tab));$('#crumb-page').textContent=({overview:'Overview',scan:'Skin analysis',shelf:'My shelf',routine:'Routine planner',shop:'Shopping studio',trail:'Decision trail'})[state.tab];
+function render(){document.querySelectorAll('.view').forEach(el=>el.classList.toggle('hidden',el.id!==`view-${state.tab}`));document.querySelectorAll('.nav-link').forEach(el=>{const active=el.dataset.tab===state.tab;el.classList.toggle('active',active);if(active)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});$('#crumb-page').textContent=({overview:'Overview',scan:'Skin analysis',shelf:'My shelf',routine:'Routine planner',shop:'Shopping studio',trail:'Decision trail'})[state.tab];
   const d=decide();const titles={overview:renderOverview,scan:renderScan,shelf:renderShelf,routine:renderRoutine,shop:renderShop,trail:renderTrail};titles[state.tab](d);drawMessage();$('#provider-chip').textContent=state.liveEnabled?'● YouCam API key authenticated':state.providerConnection==='failed'?'● YouCam authentication failed':state.providerConnection==='checking'?'● Checking YouCam credentials':'● Sample mode available';
 }
 const title=(eyebrow,h1,subtitle)=>`<div class="page-heading"><div class="eyebrow">${eyebrow}</div><h1>${h1}</h1><p>${subtitle}</p></div>`;
+function renderWorkspaceHub(d) {
+  const snap=shelfSummary(d.owned,state.sampleInventory,state.savedIds.length);
+  const cards=[
+    {step:'01',name:'Make your shelf yours',hint:snap.real?snap.ownedCount+' real items saved on this device':'Starter products are illustrative until you add your own',go:'shelf',cta:snap.real?'Manage inventory':'Add real products',done:snap.real},
+    {step:'02',name:'Understand routine coverage',hint:snap.real?snap.coveredCount+' of 3 basic steps represented · '+snap.missingCount+' gaps to review':'Explore an example morning/evening planner before setup',go:'routine',cta:'Open daily planner',done:snap.real&&snap.coveredCount===3},
+    {step:'03',name:'Compare before spending',hint:snap.savedCount?snap.savedCount+' saved concepts, not purchased':'Explore examples and save concepts privately',go:'shop',cta:'Browse concepts',done:snap.savedCount>0}
+  ];
+  return `<section class="workspace-hub" aria-label="Getting started with RoutineGap">
+    <div class="workspace-hub-heading"><div><div class="eyebrow">YOUR WORKSPACE · GET STARTED</div><h2>Everything you need, in one place.</h2>
+    <p>Start with your actual products, see which routine steps they cover, and explore options only if you want to. This workspace works without an account or skin scan.</p></div>
+    <span class="workspace-setup-chip">${snap.real?'PERSONAL SHELF ACTIVE':'ILLUSTRATIVE PREVIEW'}</span></div>
+    <div class="workspace-hub-grid">${cards.map(c=>`<button type="button" class="workspace-hub-card" data-go="${c.go}"><span class="workspace-step-num">${c.step} ${c.done?'<span aria-label="Ready">✓</span>':''}</span>
+      <strong>${escape(c.name)}</strong><small>${escape(c.hint)}</small><em>${escape(c.cta)} →</em></button>`).join('')}</div>
+    <p class="workspace-data-note">Your product list, preferences, and saved concepts stay in this browser. Sample inventory does not count as real ownership. A YouCam scan is optional and requires separate explicit consent.</p>
+  </section>`;
+}
 function renderOverview(d){const selectedCart=d.rows.filter(x=>state.cartIds.includes(x.id));const selectedTotal=selectedCart.reduce((sum,item)=>sum+item.price,0);$('#view-overview').innerHTML=`<div class="hero"><div class="page-kicker"><span class="dot"></span><span class="eyebrow" style="color:#d9e9ca">THE SMARTER SKINCARE EDIT</span></div><h1>Your shelf first.<br><em>Shop smarter.</em></h1><p>Your next best skincare purchase might be one you don't need. Understand your cosmetic skin signals, see what you already have, and spend with intention.</p><button class="primary" data-go="scan">Start my skin-aware session →</button><div class="hero-art" aria-hidden="true"></div><div class="hero-orbit" aria-hidden="true"></div></div>
 <div class="stats"><div class="stat"><span>Products on your shelf</span><strong>${d.owned.length}</strong><small>${state.sampleInventory?'Illustrative sample inventory':'Your saved local inventory'}</small></div><div class="stat"><span>Your selected demo cart</span><strong>${money(selectedTotal)}</strong><small>${selectedTotal>d.budget?'Over budget by '+money(selectedTotal-d.budget):state.cartIds.length?'Within '+money(d.budget)+' budget':'No selections yet · Suggested '+money(d.cartTotal)}</small></div><div class="stat"><span>Duplicate purchases avoided</span><strong>${d.skippedRedundant}</strong><small>Illustrative catalog options screened</small></div></div>
+${renderWorkspaceHub(d)}
 <section class="demo-journey" aria-label="Guided RoutineGap walkthrough">
   <div class="demo-journey-lead"><div><div class="eyebrow">THE 60-SECOND JUDGE WALKTHROUGH</div>
     <h2>See the full decision journey</h2><p>Explore a labeled example without uploading a face photo, entering a passcode, or using YouCam API credits. The demo is not evidence of a completed live scan.</p>
@@ -113,8 +131,97 @@ ${goals.some(g=>g.id===x.type)?`<button type="button" class="scan-focus-action" 
     <p class="photo-guide-footnote">These tools can inspect, crop, export or downsize an existing high-quality photo, but <b>cannot restore missing skin detail</b> to a low-resolution image. See <a href="https://docs.perfectcorp.com/reference/ai_skin_analysis/section/overview/file-specs-and-errors" target="_blank" rel="noopener noreferrer">Perfect Corp's official photo specifications ↗</a>.</p>
   </div>
 </section>`;}
-function renderShelf(d){$('#view-shelf').innerHTML=`${title('YOUR PRODUCTS','Make the most of what you have','Add products you already use. We flag redundant shopping steps before suggesting anything new. Your shelf and budget are stored in this browser only.')}
-<div class="two-col" style="grid-template-columns:1fr 1.4fr"><div class="panel"><div class="eyebrow">ADD TO YOUR SHELF</div><h3 style="margin:9px 0 18px">Record a product you own</h3><form id="add-product"><div class="field"><label for="owned-name">Product name</label><input id="owned-name" required maxlength="90" placeholder="e.g. My gentle face wash"></div><div class="forms" style="margin-top:14px"><div class="field"><label for="owned-step">Routine step</label><select id="owned-step">${Object.entries(stepLabels).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div><div class="field"><label for="owned-price">Purchase price (USD)</label><input id="owned-price" type="number" min="0" max="10000" value="15"></div></div><div class="field" style="margin-top:14px"><label for="owned-tags">Tags (comma-separated, optional)</label><input id="owned-tags" maxlength="140" placeholder="hydrating, fragrance-free"></div><button class="primary" style="margin-top:16px" type="submit">Add to shelf +</button><p class="muted small">Your first real product replaces the example starter shelf; sample products will not be treated as your own.</p></form><div class="separator"></div><button class="tiny-btn" id="reset-shelf">Load illustrative starter shelf</button><button class="tiny-btn" id="clear-shelf" style="margin-left:6px">Clear shelf</button></div><div class="panel"><div class="eyebrow">YOUR INVENTORY</div><h3 style="margin:9px 0 12px">${d.owned.length} products on file ${state.sampleInventory?'<span class="label-pill peach">SAMPLE INVENTORY</span>':''}</h3>${d.owned.length?d.owned.map(x=>`<div class="list-row"><div><strong>${escape(x.name)}</strong><div class="muted small">${escape(stepLabels[x.step])} · ${escape(x.tags.join(' · '))}</div></div><button class="tiny-btn" data-remove="${escape(x.id)}" aria-label="Remove ${escape(x.name)}">Remove</button></div>`).join(''):'<div class="empty">Your shelf is empty. Start with a product you already own.</div>'}<div class="panel-actions"><button class="secondary" data-go="shop">Compare with catalog →</button></div></div></div>`;}
+function renderShelfResults(d) {
+  const q=state.shelfQuery.trim().toLocaleLowerCase('en');
+  const results=d.owned.filter(item=>[item.name,stepLabels[item.step],...item.tags].join(' ').toLocaleLowerCase('en').includes(q));
+  const counter=$('#shelf-count');if(counter)counter.textContent=results.length+' / '+d.owned.length+' visible';
+  const target=$('#shelf-inventory');if(!target)return;
+  target.innerHTML=results.length?results.map(item=>`<article class="shelf-owned-row">
+    <div class="shelf-owned-icon" aria-hidden="true">${item.step==='spf'?'☀':item.step==='moisturizer'?'◒':item.step==='serum'?'✦':'◌'}</div>
+    <div class="shelf-owned-copy"><strong>${escape(item.name)}</strong><span>${escape(stepLabels[item.step])} · ${money(item.price)} recorded purchase price</span><small>${item.tags.length?escape(item.tags.join(' · ')):'No additional tags'}</small></div>
+    <div class="shelf-owned-actions"><button type="button" class="tiny-btn" data-edit="${escape(item.id)}" ${state.sampleInventory?'disabled title="Replace the sample shelf with your real products to edit"':''}>Edit</button>
+    <button type="button" class="tiny-btn" data-remove="${escape(item.id)}" aria-label="${escape('Remove '+item.name)}">Remove</button></div>
+  </article>`).join(''):`<div class="empty">${d.owned.length?'No shelf products match your search. Try fewer words.':'Your shelf is empty. Add your first product to get started.'}</div>`;
+}
+function renderShelf(d) {
+ const editing=!state.sampleInventory?d.owned.find(p=>p.id===state.editingId):null;
+ $('#view-shelf').innerHTML=`${title('YOUR PRODUCTS','Your personal shelf','Manage what you actually own. Search, correct product details, and keep a private backup of your inventory. Example starter products are never silently treated as real ownership.')}
+ <div class="shelf-header-stats">
+ <div><span>Recorded products</span><strong>${d.owned.length}</strong><small>${state.sampleInventory?'Illustrative preview':'Browser-local inventory'}</small></div>
+ <div><span>Routine steps covered</span><strong>${new Set(d.owned.filter(x=>['cleanser','moisturizer','spf'].includes(x.step)).map(x=>x.step)).size} / 3</strong><small>${state.sampleInventory?'Preview only':'Category-based overview'}</small></div>
+ <div><span>Inventory provenance</span><strong class="shelf-provenance">${state.sampleInventory?'SAMPLE':'USER-ENTERED'}</strong><small>No account or cloud sync</small></div></div>
+ <div class="shelf-workspace">
+ <div class="shelf-editor-column"><section class="panel shelf-editor">
+ <div class="eyebrow">ADD TO YOUR SHELF</div><h3>Record an item you own</h3>
+ <form id="add-product"><div class="field"><label for="owned-name">Product name</label><input id="owned-name" name="name" required maxlength="90" placeholder="e.g. My gentle face wash"></div>
+ <div class="forms" style="margin-top:14px"><div class="field"><label for="owned-step">Routine step</label><select id="owned-step">${Object.entries(stepLabels).map(([k,v])=>`<option value="${k}">${escape(v)}</option>`).join('')}</select></div>
+ <div class="field"><label for="owned-price">Purchase price (USD)</label><input id="owned-price" type="number" min="0" max="10000" step=".01" value="15"></div></div>
+ <div class="field" style="margin-top:14px"><label for="owned-tags">Tags (optional, comma-separated)</label><input id="owned-tags" maxlength="140" placeholder="hydrating, fragrance-free"></div>
+ <button class="primary" type="submit" style="margin-top:16px">Add to shelf +</button>
+ <p class="muted small">Adding your first real item replaces the illustrative starter shelf. Maximum ${SHELF_LIMIT} products; don't enter medical records or private credentials.</p></form>
+ </section>
+ ${editing?`<section class="panel shelf-edit-panel"><div class="eyebrow">EDIT AN OWNED PRODUCT</div><h3>Update ${escape(editing.name)}</h3>
+ <form id="edit-product"><input type="hidden" id="edit-owned-id" value="${escape(editing.id)}">
+ <div class="field"><label for="edit-owned-name">Product name</label><input id="edit-owned-name" required maxlength="90" value="${escape(editing.name)}"></div>
+ <div class="forms" style="margin-top:14px"><div class="field"><label for="edit-owned-step">Routine step</label><select id="edit-owned-step">${Object.entries(stepLabels).map(([id,label])=>`<option value="${id}" ${editing.step===id?'selected':''}>${escape(label)}</option>`).join('')}</select></div>
+ <div class="field"><label for="edit-owned-price">Purchase price (USD)</label><input type="number" min="0" max="10000" step=".01" id="edit-owned-price" value="${editing.price}"></div></div>
+ <div class="field" style="margin-top:14px"><label for="edit-owned-tags">Tags</label><input id="edit-owned-tags" maxlength="140" value="${escape(editing.tags.join(', '))}"></div>
+ <div class="panel-actions"><button class="primary" type="submit">Save changes</button><button class="ghost" id="cancel-edit" type="button">Cancel</button></div></form></section>`:''}
+ <section class="panel shelf-data-panel"><div class="eyebrow">DATA & CONTROL</div><h3>Your inventory belongs to you.</h3>
+ <p class="muted small">Export a JSON copy or restore one from another browser. All processing is on your device; uploads never reach RoutineGap or YouCam. Backups intentionally exclude photos, scans, passcodes and receipts.</p>
+ <div class="shelf-data-actions"><button class="secondary" id="export-shelf" type="button" ${state.sampleInventory?'disabled title="Sample inventory cannot be exported as real user data"':''}>↓ Export shelf (.json)</button>
+ <button class="ghost" id="import-shelf-trigger" type="button">↑ Import backup</button><input class="sr-only" id="shelf-import" type="file" accept=".json,application/json" aria-label="Choose RoutineGap shelf JSON backup"></div>
+ <p class="muted small">Import replaces the existing product list and preferences only after confirmation. Keep JSON backups private because they contain product names you entered.</p>
+ </section></div>
+ <section class="panel shelf-inventory-panel"><div class="shelf-inventory-top"><div><div class="eyebrow">MY INVENTORY</div><h3>What's already on your shelf?</h3></div>
+ <span class="label-pill ${state.sampleInventory?'peach':''}">${state.sampleInventory?'SAMPLE INVENTORY':'OWNED PRODUCTS'}</span></div>
+ <div class="shelf-search-row"><label for="shelf-search">Search your shelf</label><input id="shelf-search" type="search" maxlength="80" placeholder="Search name, type or tag…" value="${escape(state.shelfQuery)}"><span id="shelf-count" aria-live="polite"></span></div>
+ ${state.undoShelf?'<div class="shelf-undo"><span>A recent shelf change can be reversed.</span><button id="undo-shelf" class="secondary" type="button">Undo change</button></div>':''}
+ <div id="shelf-inventory"></div>
+ <div class="shelf-actions-footer"><button class="tiny-btn" id="reset-shelf" type="button">Load illustrative starter shelf</button>
+ <button class="tiny-btn" id="clear-shelf" type="button">Clear shelf</button>
+ <button class="secondary" data-go="routine" type="button">Build my routine →</button></div>
+ <p class="muted small">Category matches indicate possible duplicate routine steps, not ingredient equivalence, product efficacy, or medical suitability.</p>
+ </section></div>`;
+ renderShelfResults(d);
+}
+function snapshotShelf(){
+ state.undoShelf={shelf:state.shelf.map(p=>({...p,tags:[...(p.tags||[])]})),sampleInventory:state.sampleInventory};
+}
+function finishShelfMutation(clearChecks=false){
+ state.editingId=null;
+ if(clearChecks){state.routineLog=null;try{localStorage.removeItem(ROUTINE_LOG_KEY);}catch{}}
+ const validIds=new Set(decide().rows.filter(p=>p.decision!=='skip').map(p=>p.id));
+ state.cartIds=state.cartIds.filter(id=>validIds.has(id));
+ persist();
+ renderShelf(decide());
+}
+function downloadShelfBackup(){
+ try{
+   const report=makeShelfBackup({shelf:state.shelf,budget:state.budget,goal:state.goal,fragranceFree:state.fragranceFree,sampleInventory:state.sampleInventory});
+   const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json;charset=utf-8'});
+   const url=URL.createObjectURL(blob);
+   const anchor=document.createElement('a');anchor.href=url;anchor.download='routinegap-shelf-backup.json';
+   document.body.appendChild(anchor);anchor.click();anchor.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),2000);
+   notice('Shelf backup downloaded locally. Keep it private; it contains your entered product names.');
+ }catch(e){notice(e.message||'Could not export your shelf.',true);}
+}
+async function importShelfBackup(file){
+ if(!file)return;
+ if(file.size>SHELF_BACKUP_MAX_BYTES||file.size===0)return notice('Select a nonempty RoutineGap backup JSON file no larger than 64 KB.',true);
+ try{
+   const imported=readShelfBackup(await file.text());
+   if(!window.confirm('Restore '+imported.shelf.length+' products and saved shopping preferences? This replaces your current shelf and settings on this device. Your scan data and separate saved concept board are not imported.'))return;
+   snapshotShelf();
+   state.shelf=imported.shelf;
+   state.budget=imported.preferences.budget;state.goal=imported.preferences.goal;
+   state.fragranceFree=imported.preferences.fragranceFree;state.goalFromScan=null;
+   state.sampleInventory=false;state.shelfQuery='';
+   finishShelfMutation(true);
+   notice('Backup restored locally: '+imported.shelf.length+' owned products. No data was uploaded.');
+ }catch(e){notice(e.message||'Could not import this backup. Your existing shelf was left unchanged.',true);}
+}
 function renderRoutine(d){
   const plan=buildRoutinePlan(d.owned), day=localRoutineDate(), sample=state.sampleInventory;
   const log=sample?{date:day,done:[]}:readRoutineLog(state.routineLog,day,plan);
@@ -391,7 +498,12 @@ function downloadDecisionBrief(){
     notice('Decision brief downloaded locally. No photo, provider credentials or demo passcode is included.');
   }catch{notice('Could not export the brief in this browser. Please try again.',true);}
 }
-document.addEventListener('click',event=>{const tab=event.target.closest('[data-tab]');if(tab)return navigate(tab.dataset.tab);const nav=event.target.closest('[data-go]');if(nav)return navigate(nav.dataset.go);const remove=event.target.closest('[data-remove]');if(remove){state.shelf=state.shelf.filter(x=>x.id!==remove.dataset.remove);state.sampleInventory=state.sampleInventory&&state.shelf.length>0;persist();renderShelf(decide());return;}
+document.addEventListener('click',event=>{const tab=event.target.closest('[data-tab]');if(tab)return navigate(tab.dataset.tab);const nav=event.target.closest('[data-go]');if(nav)return navigate(nav.dataset.go);const remove=event.target.closest('[data-remove]');if(remove){if(!state.shelf.some(p=>p.id===remove.dataset.remove))return;snapshotShelf();state.shelf=state.shelf.filter(x=>x.id!==remove.dataset.remove);state.sampleInventory=state.sampleInventory&&state.shelf.length>0;finishShelfMutation(true);notice('Product removed. Use Undo change to restore it.');return;}
+ const edit=event.target.closest('[data-edit]');if(edit){if(state.sampleInventory)return notice('Replace illustrative starter products with your own before editing.',true);state.editingId=edit.dataset.edit;renderShelf(decide());$('#edit-owned-name')?.focus();return;}
+ if(event.target.closest('#cancel-edit')){state.editingId=null;renderShelf(decide());return;}
+ if(event.target.closest('#undo-shelf')){if(!state.undoShelf)return;const prior=state.undoShelf;state.undoShelf=null;state.shelf=prior.shelf;state.sampleInventory=prior.sampleInventory;state.shelfQuery='';finishShelfMutation(true);notice('Previous shelf restored.');return;}
+ if(event.target.closest('#export-shelf'))return downloadShelfBackup();
+ if(event.target.closest('#import-shelf-trigger')){$('#shelf-import')?.click();return;}
  const focus=event.target.closest('[data-scan-goal]');if(focus){
    const goal=focus.dataset.scanGoal;
    if(state.busy||!state.scan||!state.scan.some(s=>s.type===goal)||!goals.some(g=>g.id===goal))return;
@@ -404,13 +516,39 @@ document.addEventListener('click',event=>{const tab=event.target.closest('[data-
  if(event.target.closest('#cart-clear')){state.cartIds=[];renderShop(decide());notice('Demo cart emptied. No transaction was made.');return;}
  if(event.target.closest('#reset-catalog')||event.target.closest('#reset-empty-catalog')){state.catalogQuery='';state.catalogStep='all';state.catalogDecision='all';state.catalogSort='recommended';state.savedOnly=false;state.affordableOnly=false;renderShop(decide());return;}
  if(event.target.closest('#clear-routine')){state.routineLog=null;try{localStorage.removeItem(ROUTINE_LOG_KEY);}catch{}renderRoutine(decide());notice('Today’s checklist cleared on this device.');return;}
- if(event.target.closest('#save-live-report'))return saveLiveReportInTab();if(event.target.closest('#forget-live-report'))return forgetLiveReportInTab();if(event.target.closest('#guided-demo')||event.target.closest('#demo-step-scan'))return setSample();if(event.target.closest('#export-decision'))return downloadDecisionBrief();if(event.target.closest('#prepare-photo'))return void prepareSelectedPhoto();if(event.target.closest('#sample-report'))return setSample();if(event.target.closest('#live-scan'))return void scanLive();if(event.target.closest('#resume-scan'))return void resumePendingScan();if(event.target.closest('#forget-scan')){if(state.busy)return;savePendingScan(null);renderScan();notice('Saved scan reference discarded. This does not cancel a task already running at Perfect Corp.');return;}if(event.target.closest('#reset-shelf')){state.shelf=sampleShelf.map(x=>({...x}));state.sampleInventory=true;persist();renderShelf(decide());return;}
- if(event.target.closest('#clear-shelf')){state.shelf=[];state.sampleInventory=false;persist();renderShelf(decide());return;}
+ if(event.target.closest('#save-live-report'))return saveLiveReportInTab();if(event.target.closest('#forget-live-report'))return forgetLiveReportInTab();if(event.target.closest('#guided-demo')||event.target.closest('#demo-step-scan'))return setSample();if(event.target.closest('#export-decision'))return downloadDecisionBrief();if(event.target.closest('#prepare-photo'))return void prepareSelectedPhoto();if(event.target.closest('#sample-report'))return setSample();if(event.target.closest('#live-scan'))return void scanLive();if(event.target.closest('#resume-scan'))return void resumePendingScan();if(event.target.closest('#forget-scan')){if(state.busy)return;savePendingScan(null);renderScan();notice('Saved scan reference discarded. This does not cancel a task already running at Perfect Corp.');return;}if(event.target.closest('#reset-shelf')){if(!state.sampleInventory&&state.shelf.length&&!window.confirm('Replace your current shelf with fictional starter products? Your existing entries can be restored with Undo change on this page.'))return;snapshotShelf();state.shelf=sampleShelf.map(x=>({...x}));state.sampleInventory=true;state.shelfQuery='';finishShelfMutation(true);notice('Illustrative starter shelf loaded. This is not a record of your own products.');return;}
+ if(event.target.closest('#clear-shelf')){if(state.shelf.length&&!window.confirm('Clear all '+state.shelf.length+' products? You can immediately undo this change.'))return;snapshotShelf();state.shelf=[];state.sampleInventory=false;state.shelfQuery='';finishShelfMutation(true);notice('Shelf cleared. Use Undo change to restore your entries.');return;}
  const cart=event.target.closest('[data-cart]');if(cart){state.cartIds=state.cartIds.includes(cart.dataset.cart)?state.cartIds.filter(x=>x!==cart.dataset.cart):[...state.cartIds,cart.dataset.cart];renderShop(decide());return;}
  if(event.target.closest('#cart-auto')){state.cartIds=decide().cartIds;renderShop(decide());return;}
 });
-document.addEventListener('change',event=>{if(event.target.id==='catalog-step'){state.catalogStep=event.target.value;renderCatalogResults(decide());return;}if(event.target.id==='catalog-decision'){state.catalogDecision=event.target.value;renderCatalogResults(decide());return;}if(event.target.id==='catalog-sort'){state.catalogSort=event.target.value;renderCatalogResults(decide());return;}if(event.target.id==='catalog-saved-only'){state.savedOnly=event.target.checked;renderCatalogResults(decide());return;}if(event.target.id==='catalog-affordable-only'){state.affordableOnly=event.target.checked;renderCatalogResults(decide());return;}if(event.target.matches('[data-routine-key]')){if(state.sampleInventory){notice('Illustrative items cannot count as actual activity.',true);renderRoutine(decide());return;}const plan=buildRoutinePlan(decide().owned),day=localRoutineDate();const log=toggleRoutineStep(state.routineLog,day,plan,event.target.dataset.routineKey,event.target.checked);state.routineLog=log;try{localStorage.setItem(ROUTINE_LOG_KEY,JSON.stringify(log));}catch{notice('Browser storage is unavailable; checks may disappear when you leave.',true);}renderRoutine(decide());return;}if(event.target.id==='photo-file'){storeFile(event.target.files?.[0]);return;}if(event.target.id==='consent'){state.consent=event.target.checked;return;}if(['budget','goal','fragrance'].includes(event.target.id)){updatePrefs();}});
-document.addEventListener('input',event=>{if(event.target.id==='catalog-search'){state.catalogQuery=event.target.value.slice(0,80);renderCatalogResults(decide());return;}if(event.target.id==='demo-passcode')state.code=event.target.value.slice(0,120);});
-document.addEventListener('submit',event=>{if(event.target.id!=='add-product')return;event.preventDefault();const name=$('#owned-name').value.trim(),step=$('#owned-step').value,price=Number($('#owned-price').value);const tags=$('#owned-tags').value.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean).slice(0,8);if(!name||!stepLabels[step]||!Number.isFinite(price)||price<0)return notice('Enter a valid product name, step and non-negative price.',true);if(state.sampleInventory)state.shelf=[];state.shelf.push({id:crypto.randomUUID(),name:name.slice(0,90),step,tags,price});state.sampleInventory=false;persist();renderShelf(decide());notice('Added to your local shelf. No data was sent to providers.');});
+document.addEventListener('change',event=>{if(event.target.id==='shelf-import'){const file=event.target.files?.[0];event.target.value='';return void importShelfBackup(file);}if(event.target.id==='catalog-step'){state.catalogStep=event.target.value;renderCatalogResults(decide());return;}if(event.target.id==='catalog-decision'){state.catalogDecision=event.target.value;renderCatalogResults(decide());return;}if(event.target.id==='catalog-sort'){state.catalogSort=event.target.value;renderCatalogResults(decide());return;}if(event.target.id==='catalog-saved-only'){state.savedOnly=event.target.checked;renderCatalogResults(decide());return;}if(event.target.id==='catalog-affordable-only'){state.affordableOnly=event.target.checked;renderCatalogResults(decide());return;}if(event.target.matches('[data-routine-key]')){if(state.sampleInventory){notice('Illustrative items cannot count as actual activity.',true);renderRoutine(decide());return;}const plan=buildRoutinePlan(decide().owned),day=localRoutineDate();const log=toggleRoutineStep(state.routineLog,day,plan,event.target.dataset.routineKey,event.target.checked);state.routineLog=log;try{localStorage.setItem(ROUTINE_LOG_KEY,JSON.stringify(log));}catch{notice('Browser storage is unavailable; checks may disappear when you leave.',true);}renderRoutine(decide());return;}if(event.target.id==='photo-file'){storeFile(event.target.files?.[0]);return;}if(event.target.id==='consent'){state.consent=event.target.checked;return;}if(['budget','goal','fragrance'].includes(event.target.id)){updatePrefs();}});
+document.addEventListener('input',event=>{if(event.target.id==='shelf-search'){state.shelfQuery=event.target.value.slice(0,80);renderShelfResults(decide());return;}if(event.target.id==='catalog-search'){state.catalogQuery=event.target.value.slice(0,80);renderCatalogResults(decide());return;}if(event.target.id==='demo-passcode')state.code=event.target.value.slice(0,120);});
+document.addEventListener('submit',event=>{
+ if(event.target.id!=='add-product'&&event.target.id!=='edit-product')return;
+ event.preventDefault();
+ const editing=event.target.id==='edit-product';
+ const prefix=editing?'edit-owned-':'owned-';
+ const name=$('#'+prefix+'name')?.value.trim()||'';
+ const step=$('#'+prefix+'step')?.value;
+ const rawPrice=$('#'+prefix+'price')?.value;
+ const price=Number(rawPrice);
+ const tags=($('#'+prefix+'tags')?.value||'').split(',').map(t=>t.trim().toLowerCase().slice(0,40)).filter(Boolean).slice(0,8);
+ if(!name||name.length>90||!Object.hasOwn(stepLabels,step)||rawPrice===''||!Number.isFinite(price)||price<0||price>10000)
+   return notice('Enter a product name, valid routine step and price between 0 and 10,000.',true);
+ if(editing){
+   if(state.sampleInventory||!state.shelf.some(p=>p.id===state.editingId))
+     return notice('This product is no longer available to edit.',true);
+   const original=state.shelf.find(p=>p.id===state.editingId);
+   state.shelf=state.shelf.map(p=>p.id===original.id?{...p,name,step,tags,price}:p);
+   state.undoShelf=null;finishShelfMutation(false);notice('Product details updated locally.');
+   return;
+ }
+ if(!state.sampleInventory&&state.shelf.length>=SHELF_LIMIT)return notice('Your shelf is at the 60-item limit.',true);
+ if(state.sampleInventory)state.shelf=[];
+ state.shelf.push({id:crypto.randomUUID(),name,step,tags,price});
+ state.sampleInventory=false;state.undoShelf=null;
+ finishShelfMutation(true);
+ notice('Product added to your local shelf. No data was sent to providers.');
+});
 async function loadStatus(){try{const response=await fetch('/api/status');const data=await response.json();state.providerConnection=typeof data.providerConnection==='string'?data.providerConnection:'disabled';state.liveEnabled=data.liveEnabled===true&&state.providerConnection==='authenticated';}catch{state.liveEnabled=false;state.providerConnection='failed';}render();}
 loadStatus();

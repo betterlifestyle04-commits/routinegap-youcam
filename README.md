@@ -16,6 +16,22 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## New: personal shelf workspace, safe backups, and guided onboarding
+
+The Overview dashboard now contains a **truthful getting-started workspace** that explains the path from a user-entered shelf to routine coverage and optional shopping exploration. Its status is derived from actual browser state: the fictional starter shelf is always identified as **illustrative**, not mistakenly counted as user-owned inventory or a completed live scan.
+
+**My Shelf** is now a working inventory editor, not just a static list: search by name, routine step or tag; add a real product; correct the product name, step, price or tags; remove entries; undo the latest shelf mutation; or clear/reset the shelf with explicit confirmation. A product is never marked owned just because it appears in the sample catalog.
+
+### Local-only inventory export and import
+
+- **Export shelf (.json)** creates a versioned RoutineGap backup containing only the validated user-entered shelf plus three shopping preferences (budget, selected cosmetic goal and fragrance-free filter). Fictional starter inventory cannot be exported as genuine ownership.
+- **Import backup** accepts **only** the supported JSON format and version, up to **64 KB** and **60 items**. It rejects unknown fields, malformed product entries, duplicate IDs and invalid values before mutating any browser state. A confirmation explains that an import **replaces** the local shelf and those preferences.
+- Everything is parsed/generated in-browser; **no backup is uploaded to RoutineGap, YouCam, or external storage**. The backup intentionally **excludes selfies, scan observations, API credentials, private demo passcodes, pending-task receipts, saved concept IDs, and routine checkmarks**. Backups containing your product names remain personal files and should be kept private.
+- Importing/resetting/replacing a shelf clears stale daily checklist checkmarks and removes no-longer-eligible ideas from the *demo cart*; it does not alter pending real scan tasks or the independent saved concept board. The last shelf replacement can be undone during the current page session.
+- Responsive shelf layouts, a sticky horizontal mobile navigation, keyboard skip-to-content link, and live active-page accessibility metadata make moving through the workspace easier on small screens.
+
+The strict schema, provenance behavior, data exclusions, and UI hooks are covered by deterministic tests. This feature needs no accounts, backend database, paid API calls, or third-party integrations.
+
 ## Expanded concept discovery and saved comparison board
 
 **Shopping Studio** now offers 25 fictional skincare concepts spanning cleansing, moisturizers, daytime SPF and optional serums (previously 9). The same deterministic dataset is shared by Node-side rules and the frontend. Each concept has a category, example price, simple descriptive copy and visible tags — **no invented merchant, stock, medical benefit, verified SPF performance, reviews, or real transactions**. A concept named SPF 50 is merely an invented product label, not a certification or sunscreen performance claim.
