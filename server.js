@@ -4,9 +4,10 @@ import {extname,join,normalize} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {timingSafeEqual} from 'node:crypto';
 import {startYouCamScan,getYouCamScan,verifyYouCamAccess,YouCamError} from './src/youcam.js';
+import {issueTaskReceipt,readTaskReceipt,TaskReceiptError} from './src/task-receipt.js';
 const root=join(fileURLToPath(new URL('.',import.meta.url)),'public');
 const mimeMap={'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon'};
-const ipHits=new Map(),createdTasks=new Map();let daily=0,day=new Date().toISOString().slice(0,10);
+const ipHits=new Map();let daily=0,day=new Date().toISOString().slice(0,10);
 const MAX_BYTES=8*1024*1024;
 function send(res,status,data,headers={}){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...headers});res.end(JSON.stringify(data));}
 const ready=()=>process.env.LIVE_SCANS_ENABLED==='true'&&!!process.env.YOUCAM_API_KEY&&!!process.env.DEMO_ACCESS_TOKEN;
@@ -14,7 +15,7 @@ let providerConnection = 'unchecked';
 function access(req){const secret=process.env.DEMO_ACCESS_TOKEN||'',given=req.headers['x-demo-access']||'';if(!secret || typeof given!=='string'||given.length!==secret.length)return false;return timingSafeEqual(Buffer.from(secret),Buffer.from(given));}
 function allowOrigin(req){const expected=process.env.PUBLIC_ORIGIN||'';if(!expected)return true;return !req.headers.origin||req.headers.origin===expected;}
 function rateLimit(req){
-  const now=Date.now(),today=new Date().toISOString().slice(0,10);if(today!==day){day=today;daily=0;ipHits.clear();createdTasks.clear();}
+  const now=Date.now(),today=new Date().toISOString().slice(0,10);if(today!==day){day=today;daily=0;ipHits.clear();}
   const ip=req.socket.remoteAddress||'unknown', recent=(ipHits.get(ip)||[]).filter(n=>n>now-3600000);
   if(recent.length>=2||daily>=20)return false;
   recent.push(now);ipHits.set(ip,recent);daily++;return true;
@@ -47,22 +48,25 @@ const server=createServer(async(req,res)=>{
       if(req.headers['x-skin-consent']!=='yes')return send(res,400,{error:'Explicit YouCam photo-sharing consent is required.'});
       const bytes=await readBytes(req,MAX_BYTES);
       const task=await startYouCamScan({bytes,mime:contentType,fileName:req.headers['x-image-filename']||'selfie.jpg'});
-      createdTasks.set(task.taskId,{ip:req.socket.remoteAddress||'unknown',expires:Date.now()+86400000});
-      return send(res,200,{taskId:task.taskId,state:'running'});
+      const receipt=issueTaskReceipt(task.taskId,process.env.DEMO_ACCESS_TOKEN);
+      return send(res,200,{state:'running',receipt,expiresInHours:24});
     }
-    if(req.method==='GET'&&url.pathname==='/api/scan/status'){
-      const taskId=url.searchParams.get('task_id');const record=createdTasks.get(taskId);
-      if(!record||record.expires<Date.now()||record.ip!==(req.socket.remoteAddress||'unknown'))return send(res,404,{error:'Unknown or expired scan task.'});
-      const result=await getYouCamScan(taskId);
-      if(result.state==='success'||result.state==='error')createdTasks.delete(taskId);
-      return send(res,200,result);
+    if(req.method==='POST'&&url.pathname==='/api/scan/status'){
+      // Never put a provider task ID in query strings / access logs.
+      if((req.headers['content-type']||'').split(';')[0]!=='application/json')
+        return send(res,415,{error:'Send the scan receipt as JSON.'});
+      const data=await readBytes(req,2048);
+      let receipt;
+      try{receipt=JSON.parse(data.toString('utf8'))?.receipt;}catch{return send(res,400,{error:'Invalid scan receipt JSON.'});}
+      const {taskId}=readTaskReceipt(receipt,process.env.DEMO_ACCESS_TOKEN);
+      return send(res,200,await getYouCamScan(taskId));
     }
     if(isAPI(req))return send(res,404,{error:'Unknown API endpoint.'});
     if(req.method!=='GET'&&req.method!=='HEAD')return send(res,405,{error:'Method not allowed.'});
     let path=url.pathname==='/'?'/index.html':url.pathname;if(!/^\/[a-zA-Z0-9./_-]+$/.test(path)||path.includes('..'))return send(res,404,{error:'Not found'});
     const target=join(root,normalize(path));if(!target.startsWith(root))return send(res,404,{error:'Not found'});
     try{const data=await readFile(target);res.writeHead(200,{'Content-Type':mimeMap[extname(target)]||'application/octet-stream','Cache-Control':'public, max-age=300','X-Content-Type-Options':'nosniff'});if(req.method==='HEAD')res.end();else res.end(data);}catch{send(res,404,{error:'Not found'});}
-  }catch(e){const status=e instanceof YouCamError?e.status:500;send(res,status,{error:e instanceof YouCamError?e.message:'The request failed. Please try again.'});}
+  }catch(e){const safe=e instanceof YouCamError||e instanceof TaskReceiptError;send(res,safe?e.status:500,{error:safe?e.message:'The request failed. Please try again.'});}
 });
 const port=Number(process.env.PORT||3000);
 if(process.env.NODE_ENV!=='test')server.listen(port,'0.0.0.0',()=>{
