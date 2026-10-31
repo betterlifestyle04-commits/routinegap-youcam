@@ -109,7 +109,7 @@ test('help descriptions never claim live checkout, medical diagnosis or provider
  assert.match(byId('provider-delete'),/No/);
  assert.match(byId('key-state'),/Only a completed provider response/i);
  assert.match(byId('face-quality'),/self-reported/i);
- assert.match(byId('passcode'),/protected/i);
+ assert.match(byId('passcode'),/protects the paid YouCam route/i);
  assert.match(byId('erase'),/does not delete/i);
  assert.match(byId('scan-meaning'),/not a diagnosis/i);
 });
