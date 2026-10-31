@@ -11,7 +11,23 @@ export const catalog = [
   {id:'hydration-serum',name:'Water Lock Serum',brand:'Concept collection',step:'serum',price:18,tags:['hydrating','fragrance-free'],goals:['moisture','texture'],description:'An optional hydration-focused step.'},
   {id:'texture-serum',name:'Smooth Finish Serum',brand:'Concept collection',step:'serum',price:22,tags:['texture-focus'],goals:['texture','pore'],description:'An optional cosmetic texture-focused step.'},
   {id:'balance-serum',name:'Balance Support Serum',brand:'Concept collection',step:'serum',price:21,tags:['lightweight','fragrance-free'],goals:['oiliness','pore'],description:'An optional lightweight serum.'},
-  {id:'soft-cleanser',name:'Cream Comfort Cleanser',brand:'Concept collection',step:'cleanser',price:15,tags:['hydrating','fragrance-free'],goals:['moisture','redness'],description:'An alternate creamy cleansing step.'}
+  {id:'soft-cleanser',name:'Cream Comfort Cleanser',brand:'Concept collection',step:'cleanser',price:15,tags:['hydrating','fragrance-free'],goals:['moisture','redness'],description:'An alternate creamy cleansing step.'},
+  {id:'calm-milk',name:'Soft Milk Cleanser',brand:'RoutineGap concepts',step:'cleanser',price:16,tags:['gentle','fragrance-free','creamy'],goals:['moisture','redness'],description:'A mild-feeling cleansing format for a simple routine.'},
+  {id:'fresh-foam',name:'Fresh Foam Wash',brand:'RoutineGap concepts',step:'cleanser',price:14,tags:['lightweight','foam'],goals:['oiliness','routine'],description:'An airy rinse-off concept for everyday cleansing.'},
+  {id:'silk-gel-cleanser',name:'Silk Gel Cleanser',brand:'RoutineGap concepts',step:'cleanser',price:19,tags:['gel','fragrance-free'],goals:['texture','pore'],description:'A transparent gel-format cleanser concept.'},
+  {id:'oat-cloud-cleanser',name:'Oat Cloud Cleanser',brand:'RoutineGap concepts',step:'cleanser',price:21,tags:['creamy','gentle','fragrance-free'],goals:['redness','moisture'],description:'A creamy-feeling daily wash concept.'},
+  {id:'water-veil-gel',name:'Water Veil Gel Cream',brand:'RoutineGap concepts',step:'moisturizer',price:20,tags:['lightweight','hydrating','fragrance-free'],goals:['oiliness','moisture'],description:'A light gel-cream texture concept.'},
+  {id:'daily-soft-lotion',name:'Daily Soft Lotion',brand:'RoutineGap concepts',step:'moisturizer',price:15,tags:['hydrating','fragrance-free'],goals:['routine','moisture'],description:'A straightforward daily moisturizer concept.'},
+  {id:'evening-cream',name:'Evening Comfort Cream',brand:'RoutineGap concepts',step:'moisturizer',price:27,tags:['rich','fragrance-free'],goals:['moisture','redness'],description:'A richer finish for those who prefer cream textures.'},
+  {id:'air-light-lotion',name:'Air Light Lotion',brand:'RoutineGap concepts',step:'moisturizer',price:18,tags:['lightweight','gel'],goals:['oiliness','pore'],description:'A quick-spreading lotion concept.'},
+  {id:'soft-mineral-spf',name:'Soft Mineral SPF 50',brand:'RoutineGap concepts',step:'spf',price:28,tags:['sun-protection','fragrance-free','mineral'],goals:['routine','redness'],description:'An example mineral sunscreen format; no SPF testing is represented.'},
+  {id:'city-screen-spf',name:'City Screen SPF 30',brand:'RoutineGap concepts',step:'spf',price:20,tags:['sun-protection','lightweight'],goals:['routine','oiliness'],description:'An illustrative everyday sunscreen concept.'},
+  {id:'daily-shield-spf',name:'Daily Shield SPF 50',brand:'RoutineGap concepts',step:'spf',price:29,tags:['sun-protection','fragrance-free'],goals:['routine','moisture'],description:'An example higher-numbered SPF label, not an efficacy claim.'},
+  {id:'dewy-screen-spf',name:'Dewy Screen SPF 30',brand:'RoutineGap concepts',step:'spf',price:26,tags:['sun-protection','hydrating'],goals:['moisture','texture'],description:'An illustrative moisturizing sunscreen format.'},
+  {id:'comfort-drop',name:'Comfort Drop Serum',brand:'RoutineGap concepts',step:'serum',price:24,tags:['hydrating','fragrance-free'],goals:['moisture','redness'],description:'An optional comfort-focused cosmetic concept.'},
+  {id:'glow-water-serum',name:'Glow Water Serum',brand:'RoutineGap concepts',step:'serum',price:19,tags:['hydrating','lightweight'],goals:['texture','moisture'],description:'An optional watery serum texture concept.'},
+  {id:'silk-serum',name:'Silk Finish Serum',brand:'RoutineGap concepts',step:'serum',price:29,tags:['fragrance-free','texture-focus'],goals:['texture','pore'],description:'An optional sensory finish concept, not a treatment claim.'},
+  {id:'quiet-serum',name:'Quiet Balance Serum',brand:'RoutineGap concepts',step:'serum',price:16,tags:['lightweight','fragrance-free'],goals:['oiliness','redness'],description:'An optional minimal-feeling cosmetic serum concept.'}
 ];
 export const sampleShelf = [
   {id:'mine-1',name:'My Gentle Cleanser',step:'cleanser',tags:['gentle','fragrance-free'],price:14},
