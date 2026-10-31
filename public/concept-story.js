@@ -40,9 +40,9 @@ export function buildConceptStory({id,catalog=[],decisionRows=[],owned=[],sample
  return {
    id:item.id,name:item.name,description:item.description,brand:item.brand,step:item.step,price:item.price,
    category,tags,related,
-   storyLabel:row?.decision==='skip'?'ALREADY COVERED':row?.decision==='optional'?'OPTIONAL EXAMPLE':row?.decision==='consider'?'CATEGORY TO REVIEW':'ILLUSTRATIVE EXAMPLE',
-   reason:typeof row?.reason==='string'?row.reason:'Review your actual products and selected preferences before considering a category.',
-   duplicate:existing.length>0,existing:existing.slice(0,3).map(p=>p.name),
+   storyLabel:row?.decision==='skip'?(sampleInventory?'SAMPLE SCENARIO OVERLAP':'ALREADY COVERED'):row?.decision==='optional'?'OPTIONAL EXAMPLE':row?.decision==='consider'?'CATEGORY TO REVIEW':'ILLUSTRATIVE EXAMPLE',
+   reason:row?.decision==='skip'&&sampleInventory?'The illustrative starter shelf in this demonstration already contains this routine category. This is NOT evidence of ownership. Enter your real products for personalized decisions.':typeof row?.reason==='string'?row.reason:'Review your actual products and selected preferences before considering a category.',
+   duplicate:existing.length>0,demoCovered:row?.decision==='skip',existing:existing.slice(0,3).map(p=>p.name),
    demoBudget:max,individuallyAffordable:item.price<=max,
    fragranceTagged:item.tags?.includes('fragrance-free')===true,fragranceFilter:fragranceFree===true,
    goalTagged:Array.isArray(item.goals)&&item.goals.includes(goal),
