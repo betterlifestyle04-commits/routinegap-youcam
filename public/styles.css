@@ -97,3 +97,11 @@
 .demo-journey-steps span{font-size:11px;line-height:1.5;color:#6b7b70}
 @media(max-width:900px){.demo-journey-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.demo-journey-steps button:nth-child(2){border-right:0}.demo-journey-steps button:nth-child(-n+2){border-bottom:1px solid #d9e8dc}}
 @media(max-width:540px){.demo-journey-lead{align-items:flex-start;padding:19px;flex-direction:column;gap:4px}.demo-journey-mark{font-size:17px}.demo-journey-steps{grid-template-columns:1fr}.demo-journey-steps button{border-right:0;border-bottom:1px solid #d9e8dc}.demo-journey-steps button:last-child{border-bottom:0}}
+
+/* Explicit, revocable session-only saved live report (no photos or credentials). */
+.private-report-save{margin:16px 0 4px;padding:16px 18px;background:#f3f8ee;border:1px solid #cfe0c9;border-radius:14px}
+.private-report-save strong{color:#284f3b;font-size:14px}
+.private-report-save p{font-size:12px;line-height:1.7;margin:8px 0 11px}
+.private-report-save .panel-actions{margin-top:10px;gap:12px}
+.private-report-save .label-pill{align-self:center}
+@media(max-width:620px){.private-report-save{padding:14px 12px}.private-report-save .panel-actions{flex-wrap:wrap}}
