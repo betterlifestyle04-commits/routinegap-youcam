@@ -23,10 +23,32 @@ export async function verifyYouCamAccess() {
 }
 
 function signedUploadUrl(url){
-  const target=new URL(url);
-  // Never upload user photos to a host controlled by an untrusted response.
-  if(target.protocol!=='https:'||target.username||target.password||!/(?:^|\.)s3(?:[.-][a-z0-9-]+)?\.amazonaws\.com$/.test(target.hostname))throw new YouCamError('Unexpected provider file upload destination.');
+  let target;
+  try{target=new URL(url);}catch{throw new YouCamError('Invalid signed upload URL from YouCam.');}
+  // Allow only HTTPS uploads directly to actual AWS S3 endpoints, never user-supplied hosts.
+  if(target.protocol!=='https:'||target.username||target.password||target.port||url.length>8192||
+     !/(?:^|\\.)s3(?:[.-][a-z0-9-]+)?\\.amazonaws\\.com$/.test(target.hostname))
+    throw new YouCamError('Unexpected provider file upload destination.');
   return url;
+}
+function signedUploadHeaders(providerHeaders,mime,bytes){
+  if(providerHeaders!==undefined&&providerHeaders!==null&&
+    (typeof providerHeaders!=='object'||Array.isArray(providerHeaders)))
+    throw new YouCamError('Invalid signed upload headers from YouCam.');
+  let providerType=mime,providerLength=String(bytes);
+  for(const [name,value] of Object.entries(providerHeaders||{})){
+    if(typeof value!=='string'&&typeof value!=='number')
+      throw new YouCamError('Invalid signed upload header from YouCam.');
+    const lower=name.toLowerCase();
+    if(lower==='content-type')providerType=String(value);
+    else if(lower==='content-length')providerLength=String(value);
+    else throw new YouCamError('YouCam returned unexpected upload headers. No image was transferred.');
+  }
+  const sameMime=providerType===mime||
+    (mime==='image/jpeg'&&providerType==='image/jpg');
+  if(!sameMime||!/^[0-9]+$/.test(providerLength)||Number(providerLength)!==bytes)
+    throw new YouCamError('YouCam signed upload instructions did not match the image being sent.');
+  return {'Content-Type':providerType,'Content-Length':String(bytes)};
 }
 export async function startYouCamScan({bytes,mime,fileName}){
   if(!(bytes instanceof Buffer) || bytes.length<1500||bytes.length>8*1024*1024)throw new YouCamError('Upload a JPG or PNG photo under 8 MB.',400);
@@ -41,7 +63,7 @@ export async function startYouCamScan({bytes,mime,fileName}){
   const first=upload?.data?.files?.[0], signed=first?.requests?.[0];
   if(!first?.file_id||!signed?.url||signed.method!=='PUT')throw new YouCamError('YouCam did not return upload instructions.');
   let put;
-  try{put=await fetch(signedUploadUrl(signed.url),{method:'PUT',headers:{'Content-Type':mime,'Content-Length':String(bytes.length)},body:bytes,signal:AbortSignal.timeout(35000)});}catch(err){if(err instanceof YouCamError)throw err;throw new YouCamError('Image transfer to YouCam failed.');}
+  try{put=await fetch(signedUploadUrl(signed.url),{method:'PUT',headers:signedUploadHeaders(signed.headers,mime,bytes.length),body:bytes,redirect:'error',signal:AbortSignal.timeout(35000)});}catch(err){if(err instanceof YouCamError)throw err;throw new YouCamError('Image transfer to YouCam failed.');}
   if(!put.ok)throw new YouCamError('YouCam image upload did not succeed.');
   const task=await api('/s2s/v2.0/task/skin-analysis',{method:'POST',body:JSON.stringify({src_file_id:first.file_id,dst_actions:['moisture','oiliness','pore','texture','redness','skin_type'],format:'json'})});
   if(typeof task?.data?.task_id!=='string'||!task.data.task_id)throw new YouCamError('YouCam did not return a valid task ID.');
