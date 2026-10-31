@@ -16,6 +16,17 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## New: your daily routine planner
+
+**Routine planner** is a genuine, navigable morning/evening product workspace. It connects **My Shelf** to a simple checklist: cleanser, moisturizer and daytime SPF in the morning; cleanser and moisturizer in the evening. It displays the **actual names of products the user entered**, missing steps, and today's own checkmarks. Serums, active treatments and skin scores are **not automatically translated into a schedule**. This is an organizational aid, not medical advice or a claim of product effectiveness.
+
+- No account, scan, API call, backend database, image upload, external analytics, or paid YouCam units are needed.
+- A small allowlisted daily checklist is stored in **localStorage** only after a user clicks, with a local calendar date. It contains task keys only: **no selfie, provider scores, credentials, or product names**. The prior day's checks are not counted as today's activity. A **Clear today's checks** control is provided.
+- The default illustrative starter shelf yields a **preview with disabled checkboxes**, not fake real-user activity. Importantly, adding the first real product now **replaces** the sample starter products so fictional inventory is never silently treated as user-owned. Editing/removing a starter item preserves the sample provenance until explicitly replaced or cleared.
+- This planner is optional and lightweight: not a reminder system, validated adherence measurement or personalized clinical skincare regimen.
+
+There is a direct entry from the Overview dashboard and first-class sidebar navigation, with mobile layouts, semantic labels and keyboard-operated controls. Dedicated pure model tests cover morning/evening schedule mapping, missing data, forging, local date boundaries, and absence of sensitive information in checkmarks. A GitHub Actions Node 22 workflow runs syntax and the full mock-backed test suite on pull requests.
+
 ## Judge-friendly, 60-second sample walkthrough
 
 The Overview dashboard includes an **opt-in, free guided demo**. Click **Start illustrative walkthrough** to load **clearly labeled synthetic example skin values** without sending a face photo, calling YouCam or using the private demo passcode.
