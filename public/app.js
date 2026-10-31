@@ -151,6 +151,44 @@ document.addEventListener('keydown',event=>{
   event.preventDefault();stopProductTour();
  }
 });
+function renderPreferenceStudio(){
+ const o=$('#preference-overlay'),target=$('#preference-content');
+ if(!o||o.hidden||!target||!state.preferenceStudio)return;
+ const stage=state.preferenceStudio.step,draft=state.preferenceStudio.draft;
+ const prev=preferencePreview(draft,{shelf:state.shelf,sampleInventory:state.sampleInventory});
+ const selected=goals.find(g=>g.id===draft.goal)?.name||'Hydration';
+ let body='';
+ if(stage===0){
+  body='<div class="pref-section-heading">Choose one focus you care about.</div><div class="pref-goal-grid">'+
+   goals.map((g,i)=>'<button type="button" data-pref-goal="'+escape(g.id)+'" aria-pressed="'+(draft.goal===g.id)+'" class="pref-goal-card '+(draft.goal===g.id?'active':'')+'"><span aria-hidden="true">'+(['◌','◐','✧','◎','✦','☼'][i]||'✧')+'</span><strong>'+escape(g.name)+'</strong><small>'+(draft.goal===g.id?'Selected preference':'Choose this preference')+'</small></button>').join('')+
+   '</div><div class="pref-inline-note">You choose this cosmetic focus yourself. A scan score does not diagnose your skin or prove that a concept will help.</div>';
+ }else if(stage===1){
+  body='<div class="pref-section-heading">Select an illustrative USD spending limit.</div>'+
+   '<div class="pref-budget-display"><span>YOUR EXAMPLE BUDGET</span><strong id="pref-budget-display">'+money(draft.budget)+'</strong></div>'+
+   '<input id="pref-budget-range" type="range" min="0" max="1000" step="1" value="'+draft.budget+'" aria-label="Set example shopping budget in US dollars" class="pref-range">'+
+   '<div class="pref-budget-scale"><span>$0</span><span>$1,000</span></div>'+
+   '<div class="pref-budget-presets">'+DEMO_BUDGETS.map(n=>'<button type="button" data-pref-budget="'+n+'" aria-pressed="'+(draft.budget===n)+'">'+money(n)+'</button>').join('')+'</div>'+
+   '<label class="pref-custom-budget" for="pref-budget-number">Custom USD amount <input id="pref-budget-number" type="number" min="0" max="1000" value="'+draft.budget+'"></label>'+
+   '<div class="pref-inline-note">These prices are fictional examples, not merchant prices or live checkout offers.</div>';
+ }else{
+  body='<label class="pref-fragrance-choice"><input type="checkbox" id="pref-fragrance" '+(draft.fragranceFree?'checked':'')+'><span><strong>Use only fragrance-free tagged examples</strong><small>Concept labels are not verified ingredient or allergy information.</small></span></label>'+
+    '<div class="pref-review-metrics"><div><span>COSMETIC FOCUS</span><strong>'+escape(selected)+'</strong></div><div><span>DEMO BUDGET</span><strong>'+money(draft.budget)+'</strong></div>'+
+    '<div><span>CONCEPTS SHOWN</span><strong>'+prev.exploredCount+'</strong></div><div><span>REAL SHELF ITEMS</span><strong>'+prev.realOwned+'</strong></div></div>'+
+    '<div class="pref-plan-preview"><div class="eyebrow">SCENARIO PREVIEW — NOT SAVED</div><h3>Illustrative plan</h3>'+
+    '<p>'+(prev.source==='sample-excluded'?'The sample shelf is excluded from genuine ownership. Add real products to personalize overlap detection.':'Your recorded shelf categories are included when flagging illustrative overlap.')+'</p>'+
+    '<div class="pref-plan-head"><span>'+prev.missingSteps.length+' routine categories to review</span><strong>'+money(prev.exampleTotal)+' example total</strong></div>'+
+    (prev.candidate.length?prev.candidate.map(item=>'<div class="pref-preview-row"><span><strong>'+escape(item.name)+'</strong><small>'+escape(item.stepLabel)+' · fictional concept</small></span><b>'+money(item.price)+'</b></div>').join(''):'<p>No essential examples were selected for this budget and shelf.</p>')+
+    '<p class="pref-plan-disclaimer">'+escape(prev.fragranceNote)+' '+escape(prev.disclosure)+'</p></div>';
+ }
+ const info=PREF_STAGES[stage],changed=differentPreferences(draft,{goal:state.goal,budget:state.budget,fragranceFree:state.fragranceFree});
+ target.innerHTML='<div class="pref-dialog-kicker"><span>YOUR ROUTINE / PREFERENCE STUDIO</span><b>0'+(stage+1)+' / 03</b></div>'+
+  '<div class="pref-stage-progress" role="img" aria-label="Step '+(stage+1)+' of 3">'+PREF_STAGES.map((_,i)=>'<span class="'+(i<=stage?'active':'')+'"></span>').join('')+'</div>'+
+  '<h2 id="preference-title">'+escape(info.title)+'</h2><p id="preference-subtitle">'+escape(info.subtitle)+'</p>'+
+  body+'<div class="pref-action-row"><button type="button" class="pref-cancel" data-pref-action="cancel">Cancel</button><div>'+
+  (stage>0?'<button type="button" class="secondary" data-pref-action="back">← Back</button>':'')+
+  '<button type="button" class="primary" data-pref-action="'+(stage===2?'apply':'next')+'">'+(stage===2?(changed?'Save preferences ✓':'Keep preferences ✓'):'Continue →')+'</button></div></div>'+
+  '<p class="pref-local-note">Nothing is uploaded. Changes apply only after Save and use the existing browser-local settings.</p>';
+}
 function renderWorkspaceHub(d){
  const v=buildLaunchpad({shelf:state.shelf,sampleInventory:state.sampleInventory,
   savedIds:state.savedIds,compareIds:state.compareIds,routineLog:state.routineLog,
