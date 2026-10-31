@@ -38,7 +38,7 @@ function monitor(page){
  });
 }
 async function shown(page,selector){
- const loc=page.locator(selector);
+ const loc=page.locator(selector).first();
  await loc.waitFor({state:'visible',timeout:10000});
  return loc;
 }
