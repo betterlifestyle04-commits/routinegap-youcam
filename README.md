@@ -14,6 +14,14 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - Privacy-first consent gate and a protected live-demo access code; no saved selfies or medical claims
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 
+## Work on this project in Codex
+
+The source is committed on the public **`main`** branch. If Codex previously showed an empty, unborn `work` checkout or "no Git refs", that was from the repository's initial empty state. **Create a new Codex task based on `main` or recreate/refresh the environment**; do not initialize a second repository.
+
+For a fresh Codex environment, use **Node.js 22**, run `npm run check && npm test`, and start with `npm start` (port **3000**). No `npm install`, database, API key, or `.env` is required to preview the sample mode. The real YouCam scan remains unavailable until the owner configures the server-side credentials.
+
+See [AGENTS.md](AGENTS.md) for the full setup recipe, repository structure, security rules and recovery steps.
+
 ## Local setup
 
 ```bash
