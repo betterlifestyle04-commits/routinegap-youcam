@@ -2,6 +2,27 @@
 <a class="skip-link" href="#main">Skip to main content</a>
 <div class="shell"><aside class="sidebar"><div class="logo"><div class="logo-icon">◔</div><span>routinegap<span class="logo-dot">.</span></span></div><div class="side-label">YOUR STUDIO</div><nav id="navigation" aria-label="Primary"><button data-tab="overview" class="nav-link active"><span>◫</span> Overview</button><button data-tab="scan" class="nav-link"><span>◎</span> Skin analysis</button><button data-tab="shelf" class="nav-link"><span>▧</span> My shelf</button><button data-tab="routine" class="nav-link"><span>☼</span> Routine planner</button><button data-tab="insights" class="nav-link"><span>◴</span> My insights</button><button data-tab="shop" class="nav-link"><span>◇</span> Shopping studio</button><button data-tab="compare" class="nav-link"><span>⇄</span> Compare lab</button><button data-tab="trail" class="nav-link"><span>≡</span> Decision trail</button><button data-tab="privacy" class="nav-link"><span>♧</span> Privacy & data</button></nav><div class="sidebar-bottom"><div class="side-note"><div class="mini-icon">✦</div><strong>Thoughtful shopping</strong><p>Better routines begin with what you already have.</p></div><div class="side-footer">Powered by YouCam Skin AI<br>Hackathon prototype • 2026</div></div></aside>
 <div class="right-pane"><header class="topbar"><div class="crumb">THE ROUTINE INTELLIGENCE STUDIO <span> / <b id="crumb-page">Overview</b></span></div><div class="top-actions"><button type="button" id="open-workspace-search" class="workspace-search-opener" aria-haspopup="dialog" aria-controls="workspace-search-dialog" aria-keyshortcuts="Control+K Meta+K"><span aria-hidden="true">⌕</span><span>Search</span><kbd>⌘ K</kbd></button><span class="live-chip" id="provider-chip">● Sample mode ready</span><div class="avatar">SL</div></div></header><main id="main" tabindex="-1"><div id="message" aria-live="polite"></div><section id="view-overview" class="view"></section><section id="view-scan" class="view hidden"></section><section id="view-shelf" class="view hidden"></section><section id="view-routine" class="view hidden"></section><section id="view-insights" class="view hidden"></section><section id="view-shop" class="view hidden"></section><section id="view-compare" class="view hidden"></section><section id="view-trail" class="view hidden"></section><section id="view-privacy" class="view hidden"></section></main><footer class="foot">RoutineGap is a cosmetic shopping aid, not medical diagnosis or treatment advice. Illustrative products are not purchasable. Images sent for live analysis are processed by Perfect Corp.</footer></div></div>
+<nav class="mobile-dock" id="mobile-dock" aria-label="Mobile quick navigation">
+  <button type="button" data-mobile-tab="overview"><span aria-hidden="true">◫</span><small>Home</small></button>
+  <button type="button" data-mobile-tab="shelf"><span aria-hidden="true">▧</span><small>My shelf</small></button>
+  <button type="button" data-mobile-tab="scan"><span aria-hidden="true">◎</span><small>Skin scan</small></button>
+  <button type="button" data-mobile-tab="shop"><span aria-hidden="true">◇</span><small>Explore</small></button>
+  <button type="button" id="mobile-more-trigger" aria-haspopup="dialog" aria-controls="mobile-more-dialog" aria-expanded="false"><span aria-hidden="true">☷</span><small>More</small></button>
+</nav>
+<div class="mobile-more-overlay" id="mobile-more-overlay" hidden>
+ <div class="mobile-more-backdrop" data-mobile-more-close="true" aria-hidden="true"></div>
+ <section class="mobile-more-dialog" id="mobile-more-dialog" role="dialog" aria-modal="true" aria-labelledby="mobile-more-title">
+   <div class="mobile-more-heading"><div><span class="eyebrow">ROUTINEGAP / WORKSPACES</span><h2 id="mobile-more-title">Explore your studio</h2></div><button type="button" id="mobile-more-close" aria-label="Close more workspaces">×</button></div>
+   <div class="mobile-more-links">
+    <button type="button" data-mobile-tab="routine"><span aria-hidden="true">☼</span><span><strong>Routine planner</strong><small>Morning and evening checklists</small></span><span aria-hidden="true">↗</span></button>
+    <button type="button" data-mobile-tab="insights"><span aria-hidden="true">◴</span><span><strong>My insights</strong><small>Recorded coverage and budgets</small></span><span aria-hidden="true">↗</span></button>
+    <button type="button" data-mobile-tab="compare"><span aria-hidden="true">⇄</span><span><strong>Compare lab</strong><small>Compare fictional skincare concepts</small></span><span aria-hidden="true">↗</span></button>
+    <button type="button" data-mobile-tab="trail"><span aria-hidden="true">≡</span><span><strong>Decision trail</strong><small>Inspect the rationale</small></span><span aria-hidden="true">↗</span></button>
+    <button type="button" data-mobile-tab="privacy"><span aria-hidden="true">♧</span><span><strong>Privacy &amp; data</strong><small>Export or erase local records</small></span><span aria-hidden="true">↗</span></button>
+   </div>
+   <p class="mobile-more-footer">All nine workspaces. Photo analysis remains optional and consent-based.</p>
+ </section>
+</div>
 <div class="command-overlay" id="workspace-search-overlay" hidden>
   <div class="command-backdrop" data-command-close="true" aria-hidden="true"></div>
   <section class="command-dialog" id="workspace-search-dialog" role="dialog" aria-modal="true" aria-labelledby="command-title">

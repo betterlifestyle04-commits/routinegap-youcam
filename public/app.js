@@ -7,6 +7,7 @@ import {COMPARE_KEY,MAX_COMPARE,COMPARE_FILTER_STEPS,normalizeCompareIds,toggleC
 import {WORKSPACE_PAGES,parseWorkspaceHash,workspaceHash,searchWorkspace} from '/workspace-search.js';
 import {DATA_GROUPS,ERASE_CATEGORIES,describeDataState,readStoragePresence,eraseOwnedStorage} from '/data-center.js';
 import {buildConceptStory} from '/concept-story.js';
+import {buildLaunchpad,mobileSelection,MOBILE_TABS,MOBILE_MORE_TABS} from '/launchpad.js';
 import {planLocalPhoto,preparePhotoLocally,PHOTO_SOURCE_MAX_BYTES} from '/photo-tools.js';
 import {SELF_CHECKS,toggleSelfCheck,photoReadiness} from '/photo-readiness.js';
 import {createDecisionBrief} from '/report-export.js';
@@ -52,6 +53,7 @@ function navigate(tab,{push=true,focus=true}={}){
   if(!WORKSPACE_PAGES.some(p=>p.id===tab))return;
   if(push&&window.location.hash!==workspaceHash(tab))window.history.pushState({tab},'',workspaceHash(tab));
   if(state.storyId&&tab!=='shop')closeConceptStory({restoreFocus:false});
+  if(!$('#mobile-more-overlay')?.hidden)closeMobileMore({restoreFocus:false});
   state.tab=tab;
   render();
   window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
@@ -65,27 +67,38 @@ function syncWorkspaceLocation(){
 window.addEventListener('popstate',syncWorkspaceLocation);
 window.addEventListener('hashchange',syncWorkspaceLocation);
 function render(){document.querySelectorAll('.view').forEach(el=>el.classList.toggle('hidden',el.id!==`view-${state.tab}`));document.querySelectorAll('.nav-link').forEach(el=>{const active=el.dataset.tab===state.tab;el.classList.toggle('active',active);if(active)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});$('#crumb-page').textContent=({overview:'Overview',scan:'Skin analysis',shelf:'My shelf',routine:'Routine planner',insights:'My insights',shop:'Shopping studio',compare:'Compare lab',trail:'Decision trail',privacy:'Privacy & data'})[state.tab];
+  syncMobileNavigation();
   const d=decide();const titles={overview:renderOverview,scan:renderScan,shelf:renderShelf,routine:renderRoutine,insights:renderInsights,shop:renderShop,compare:renderCompare,trail:renderTrail,privacy:renderPrivacy};titles[state.tab](d);drawMessage();$('#provider-chip').textContent=state.liveEnabled?'● YouCam API key authenticated':state.providerConnection==='failed'?'● YouCam authentication failed':state.providerConnection==='checking'?'● Checking YouCam credentials':'● Sample mode available';
 }
 const title=(eyebrow,h1,subtitle)=>`<div class="page-heading"><div class="eyebrow">${eyebrow}</div><h1>${h1}</h1><p>${subtitle}</p></div>`;
-function renderWorkspaceHub(d) {
-  const snap=shelfSummary(d.owned,state.sampleInventory,state.savedIds.length);
-  const cards=[
-    {step:'01',name:'Make your shelf yours',hint:snap.real?snap.ownedCount+' real items saved on this device':'Starter products are illustrative until you add your own',go:'shelf',cta:snap.real?'Manage inventory':'Add real products',done:snap.real},
-    {step:'02',name:'Understand routine coverage',hint:snap.real?snap.coveredCount+' of 3 basic steps represented · '+snap.missingCount+' gaps to review':'Explore an example morning/evening planner before setup',go:'routine',cta:'Open daily planner',done:snap.real&&snap.coveredCount===3},
-    {step:'03',name:'Compare before spending',hint:snap.savedCount?snap.savedCount+' saved concepts, not purchased':'Explore examples and save concepts privately',go:'shop',cta:'Browse concepts',done:snap.savedCount>0}
-  ];
-  return `<section class="workspace-hub" aria-label="Getting started with RoutineGap">
-    <div class="workspace-hub-heading"><div><div class="eyebrow">YOUR WORKSPACE · GET STARTED</div><h2>Everything you need, in one place.</h2>
-    <p>Start with your actual products, see which routine steps they cover, and explore options only if you want to. This workspace works without an account or skin scan.</p></div>
-    <span class="workspace-setup-chip">${snap.real?'PERSONAL SHELF ACTIVE':'ILLUSTRATIVE PREVIEW'}</span></div>
-    <div class="workspace-hub-grid">${cards.map(c=>`<button type="button" class="workspace-hub-card" data-go="${c.go}"><span class="workspace-step-num">${c.step} ${c.done?'<span aria-label="Ready">✓</span>':''}</span>
-      <strong>${escape(c.name)}</strong><small>${escape(c.hint)}</small><em>${escape(c.cta)} →</em></button>`).join('')}</div>
-    <p class="workspace-data-note">Your product list, preferences, and saved concepts stay in this browser. Sample inventory does not count as real ownership. A YouCam scan is optional and requires separate explicit consent.</p>
-  </section>`;
+function renderWorkspaceHub(d){
+ const v=buildLaunchpad({shelf:state.shelf,sampleInventory:state.sampleInventory,
+  savedIds:state.savedIds,compareIds:state.compareIds,routineLog:state.routineLog,
+  scanSource:state.scanSource});
+ const b=v.priority;
+ return `<section class="workspace-hub launchpad" aria-label="Your RoutineGap getting started workspace">
+ <div class="workspace-hub-heading">
+  <div><div class="eyebrow">YOUR WORKSPACE · START HERE</div><h2>A better routine starts with clarity.</h2>
+  <p>Use your own shelf, review everyday routine steps, and consider new ideas only when they add something. No scan or account required.</p></div>
+  <span class="workspace-setup-chip">${v.sampleInventory?'EXAMPLE SHELF · NOT YOUR INVENTORY':'YOUR LOCAL WORKSPACE'}</span>
+ </div>
+ <div class="launchpad-feature">
+  <div><div class="launchpad-feature-kicker"><span class="launchpad-pulse" aria-hidden="true"></span> SUGGESTED NEXT ACTION · BASED ON THIS BROWSER</div>
+  <h3>${escape(b.label)}</h3><p>${escape(b.detail)}. Your decisions are yours—this is a suggested navigation step, not an instruction to purchase.</p>
+  <button type="button" class="launchpad-next-btn" data-go="${b.go}">${escape(b.cta)} <span aria-hidden="true">↗</span></button></div>
+  <div class="launchpad-mini-metrics"><div><span>Personally entered</span><strong>${v.ownedCount}</strong><small>Products, excluding sample</small></div>
+  <div><span>Basic categories</span><strong>${v.coveredCount}/3</strong><small>Recorded on your real shelf</small></div></div>
+ </div>
+ <div class="launchpad-steps-heading"><strong>Explore your journey</strong><span>These are optional milestones, not a score or purchase history</span></div>
+ <div class="workspace-hub-grid launchpad-grid">${v.milestones.map((item,i)=>`<button type="button" class="workspace-hub-card launchpad-step ${item.complete?'is-complete':''}" data-go="${item.go}">
+  <span class="workspace-step-num">${String(i+1).padStart(2,'0')} <span class="launchpad-step-state">${item.complete?'RECORDED':'AVAILABLE'}</span></span>
+  <strong>${escape(item.label)}</strong><small>${escape(item.detail)}</small><em>${escape(item.cta)} →</em></button>`).join('')}</div>
+ <div class="launchpad-privacy-note"><span aria-hidden="true">◉</span><p>${escape(v.supporting)} ${escape(v.disclosure)}</p>
+ <button type="button" data-go="privacy">Your data controls ↗</button></div>
+ </section>`;
 }
 function renderOverview(d){const selectedCart=d.rows.filter(x=>state.cartIds.includes(x.id));const selectedTotal=selectedCart.reduce((sum,item)=>sum+item.price,0);$('#view-overview').innerHTML=`<div class="hero"><div class="page-kicker"><span class="dot"></span><span class="eyebrow" style="color:#d9e9ca">THE SMARTER SKINCARE EDIT</span></div><h1>Your shelf first.<br><em>Shop smarter.</em></h1><p>Your next best skincare purchase might be one you don't need. Understand your cosmetic skin signals, see what you already have, and spend with intention.</p><button class="primary" data-go="scan">Start my skin-aware session →</button><div class="hero-art" aria-hidden="true"></div><div class="hero-orbit" aria-hidden="true"></div></div>
-<div class="stats"><div class="stat"><span>Products on your shelf</span><strong>${d.owned.length}</strong><small>${state.sampleInventory?'Illustrative sample inventory':'Your saved local inventory'}</small></div><div class="stat"><span>Your selected demo cart</span><strong>${money(selectedTotal)}</strong><small>${selectedTotal>d.budget?'Over budget by '+money(selectedTotal-d.budget):state.cartIds.length?'Within '+money(d.budget)+' budget':'No selections yet · Suggested '+money(d.cartTotal)}</small></div><div class="stat"><span>Duplicate purchases avoided</span><strong>${d.skippedRedundant}</strong><small>Illustrative catalog options screened</small></div></div>
+<div class="stats"><div class="stat"><span>${state.sampleInventory?'Illustrative shelf items':'Your recorded products'}</span><strong>${d.owned.length}</strong><small>${state.sampleInventory?'Examples, not items you own':'Products you entered in this browser'}</small></div><div class="stat"><span>Your selected demo cart</span><strong>${money(selectedTotal)}</strong><small>${selectedTotal>d.budget?'Over budget by '+money(selectedTotal-d.budget):state.cartIds.length?'Within '+money(d.budget)+' budget':'No selections yet · Suggested '+money(d.cartTotal)}</small></div><div class="stat"><span>Covered concepts flagged</span><strong>${d.skippedRedundant}</strong><small>Rule-based demo labels, not purchases avoided</small></div></div>
 ${renderWorkspaceHub(d)}
 <section class="demo-journey" aria-label="Guided RoutineGap walkthrough">
   <div class="demo-journey-lead"><div><div class="eyebrow">THE 60-SECOND JUDGE WALKTHROUGH</div>
@@ -856,7 +869,62 @@ function closeConceptStory({restoreFocus=true}={}){
  storyReturnFocus=null;
 }
 document.addEventListener('keydown',event=>{const overlay=$('#concept-story-overlay');if(!overlay||overlay.hidden)return;if(event.key==='Escape'){event.preventDefault();closeConceptStory();return;}if(event.key==='Tab'){const controls=[...overlay.querySelectorAll('button:not([disabled])')].filter(x=>x.getClientRects().length);if(!controls.length)return;const first=controls[0],last=controls[controls.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}});
+let mobileMoreReturnFocus=null;
+function syncMobileNavigation(){
+ const current=mobileSelection(state.tab);
+ document.querySelectorAll('#mobile-dock [data-mobile-tab]').forEach(el=>{
+  const active=el.dataset.mobileTab===current;
+  el.classList.toggle('active',active);
+  if(active)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');
+ });
+ const more=$('#mobile-more-trigger');
+ if(more){more.classList.toggle('active',current==='more');more.setAttribute('aria-expanded',String(!$('#mobile-more-overlay')?.hidden));}
+ document.querySelectorAll('#mobile-more-dialog [data-mobile-tab]').forEach(el=>{
+  const active=el.dataset.mobileTab===state.tab;
+  el.classList.toggle('active',active);
+  if(active)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');
+ });
+}
+function openMobileMore(){
+ const overlay=$('#mobile-more-overlay');
+ if(!overlay||!overlay.hidden)return;
+ mobileMoreReturnFocus=document.activeElement;
+ overlay.hidden=false;
+ document.body.classList.add('is-mobile-more-open');
+ $('#mobile-more-trigger')?.setAttribute('aria-expanded','true');
+ const selected=overlay.querySelector('[aria-current="page"]');
+ (selected||overlay.querySelector('#mobile-more-close'))?.focus({preventScroll:true});
+}
+function closeMobileMore({restoreFocus=true}={}){
+ const overlay=$('#mobile-more-overlay');
+ if(!overlay||overlay.hidden)return;
+ overlay.hidden=true;
+ document.body.classList.remove('is-mobile-more-open');
+ $('#mobile-more-trigger')?.setAttribute('aria-expanded','false');
+ if(restoreFocus){
+  const target=mobileMoreReturnFocus?.isConnected?mobileMoreReturnFocus:$('#mobile-more-trigger');
+  target?.focus({preventScroll:true});
+ }
+ mobileMoreReturnFocus=null;
+}
+document.addEventListener('keydown',event=>{
+ const overlay=$('#mobile-more-overlay');
+ if(!overlay||overlay.hidden)return;
+ if(event.key==='Escape'){event.preventDefault();closeMobileMore();return;}
+ if(event.key==='Tab'){
+  const controls=[...overlay.querySelectorAll('button:not([disabled])')].filter(el=>el.getClientRects().length);
+  if(!controls.length)return;
+  const index=controls.indexOf(document.activeElement);
+  if(event.shiftKey&&index===0){event.preventDefault();controls[controls.length-1].focus();}
+  else if(!event.shiftKey&&index===controls.length-1){event.preventDefault();controls[0].focus();}
+ }
+});
+window.addEventListener('resize',()=>{if(window.innerWidth>760)closeMobileMore({restoreFocus:false});});
 document.addEventListener('click',event=>{
+ const mobileTab=event.target.closest('[data-mobile-tab]');
+ if(mobileTab){navigate(mobileTab.dataset.mobileTab);return;}
+ if(event.target.closest('#mobile-more-trigger')){openMobileMore();return;}
+ if(event.target.closest('#mobile-more-close')||event.target.closest('[data-mobile-more-close]')){closeMobileMore();return;}
  const openStory=event.target.closest('[data-open-story]');if(openStory){openConceptStory(openStory.dataset.openStory);return;}
  if(event.target.closest('#close-concept-story')||event.target.closest('[data-story-close]')){closeConceptStory();return;}
  if(event.target.closest('#open-workspace-search')){openWorkspaceSearch();return;}
