@@ -39,7 +39,8 @@ export function readStoragePresence(localStorage,sessionStorage){
  return DATA_GROUPS.map(group=>{
   let exists=false,unavailable=false;
   for(const {scope,key} of group.keys){
-   try{if(stores[scope]?.getItem(key)!==null)exists=true;}
+   try{const store=stores[scope];if(!store){unavailable=true;continue;}
+       if(store.getItem(key)!==null)exists=true;}
    catch{unavailable=true;}
   }
   return {id:group.id,exists,unavailable};
