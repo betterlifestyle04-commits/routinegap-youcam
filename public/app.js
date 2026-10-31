@@ -50,13 +50,13 @@ function navigate(tab,{push=true,focus=true}={}){
   if(push&&window.location.hash!==workspaceHash(tab))window.history.pushState({tab},'',workspaceHash(tab));
   state.tab=tab;
   render();
-  window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+  window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   if(focus)$('#main')?.focus({preventScroll:true});
 }
 function syncWorkspaceLocation(){
   const tab=parseWorkspaceHash(window.location.hash);
   // #main is the keyboard skip link, not a navigation destination.
-  if(tab&&tab!==state.tab)navigate(tab,{push:false,focus:true});
+  if((tab||window.location.hash==='')&&(tab||'overview')!==state.tab)navigate(tab||'overview',{push:false,focus:true});
 }
 window.addEventListener('popstate',syncWorkspaceLocation);
 window.addEventListener('hashchange',syncWorkspaceLocation);
