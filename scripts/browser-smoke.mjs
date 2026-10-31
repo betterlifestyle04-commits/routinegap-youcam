@@ -138,6 +138,77 @@ try{
  await desktop.goto(base+'/#/scan',{waitUntil:'networkidle'});
  await desktop.screenshot({path:'artifacts/browser/desktop-scan-journey.png',fullPage:true});
  
+ // Isolated synthetic photo + intercepted API responses: this exercises the paid
+ // request UI path without transmitting any photo or using real YouCam credits.
+ async function fakePhoto(page){
+  const image=await page.evaluate(()=>{
+   const canvas=document.createElement('canvas');
+   canvas.width=720;canvas.height=960;
+   const ctx=canvas.getContext('2d');
+   for(let y=0;y<960;y+=6){ctx.fillStyle='rgb('+(y%217)+','+((y*3)%241)+',155)';ctx.fillRect(0,y,720,6);}
+   for(let x=0;x<720;x+=15){ctx.fillStyle='rgba(20,45,100,.15)';ctx.fillRect(x,0,4,960);}
+   return canvas.toDataURL('image/png').split(',')[1];
+  });
+  const bytes=Buffer.from(image,'base64');
+  assert.ok(bytes.length>1500);
+  await page.locator('#photo-file').setInputFiles({name:'generated-test-pattern.png',mimeType:'image/png',buffer:bytes});
+  await shown(page,'#photo-readiness-panel .readiness-pill.ready');
+  await page.locator('#consent').check();
+  await page.locator('#demo-passcode').fill('mock-passcode-not-real');
+  await page.locator('#live-scan').waitFor({state:'visible'});
+  assert.equal(await page.locator('#live-scan').isDisabled(),false);
+ }
+ async function mockStatus(page){
+  await page.route('**/api/status',route=>route.fulfill({
+   status:200,contentType:'application/json',body:JSON.stringify({liveEnabled:true,providerConnection:'authenticated'})
+  }));
+ }
+ const uncertain=await browser.newPage({viewport:{width:1180,height:860}});
+ const uncertainErrors=[];
+ uncertain.on('pageerror',e=>uncertainErrors.push(e.message));
+ await mockStatus(uncertain);
+ let uncertainPosts=0;
+ await uncertain.route('**/api/scan',route=>{
+  uncertainPosts++;
+  return route.fulfill({status:502,contentType:'application/json',body:JSON.stringify({error:'Simulated upstream interruption; unknown provider task state.'})});
+ });
+ await uncertain.goto(base+'/#/scan',{waitUntil:'networkidle'});
+ await fakePhoto(uncertain);
+ await uncertain.locator('#live-scan').click();
+ await shown(uncertain,'#scan-uncertain-clear');
+ assert.equal(uncertainPosts,1);
+ assert.equal(await uncertain.locator('#live-scan').isDisabled(),true);
+ await uncertain.reload({waitUntil:'networkidle'});
+ await shown(uncertain,'#scan-uncertain-clear');
+ assert.equal(await uncertain.locator('#live-scan').isDisabled(),true);
+ assert.deepEqual(uncertainErrors,[]);
+ await uncertain.close();
+
+ const completed=await browser.newPage({viewport:{width:1180,height:860}});
+ const completedErrors=[];
+ completed.on('pageerror',e=>completedErrors.push(e.message));
+ await mockStatus(completed);
+ let started=0,polled=0;
+ await completed.route('**/api/scan',route=>{
+  started++;
+  return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({state:'running',receipt:'mock-test-only-receipt'})});
+ });
+ await completed.route('**/api/scan/status',route=>{
+  polled++;
+  return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({state:'success',
+   signals:[{type:'moisture',uiScore:71,rawScore:54}]})});
+ });
+ await completed.goto(base+'/#/scan',{waitUntil:'networkidle'});
+ await fakePhoto(completed);
+ await completed.locator('#live-scan').click();
+ await shown(completed,'#view-scan:not(.hidden) .scan-journey-chip.success');
+ assert.equal(started,1,'Only one mocked task submission should occur');
+ assert.equal(polled,1,'The existing task was checked using its receipt');
+ assert.equal(await completed.locator('#scan-uncertain-clear').count(),0);
+ assert.ok((await completed.locator('#view-scan').innerText()).includes('REAL YOUCAM RESULT'));
+ assert.deepEqual(completedErrors,[]);
+ await completed.close();
+
  const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
  monitor(mobile);
  await mobile.goto(base+'/#/overview',{waitUntil:'networkidle'});
@@ -167,7 +238,7 @@ try{
 
  assert.deepEqual(providerCalls,[],'Tour and Help must never submit a scan');
  assert.deepEqual(errors,[],'No client-side JavaScript exceptions are allowed');
- console.log('Chromium smoke passed: 10-section navigation, 33 FAQs, article search, demo scan, six-stop tour, global search, mobile dock, preference save/cancel, scan recovery/erasure and no paid API calls.');
+ console.log('Chromium smoke passed: 10-section navigation, 33 FAQs, article search, demo scan, six-stop tour, global search, mobile dock, preference save/cancel, scan recovery/erasure, intercepted synthetic task success/failure and no paid provider calls.');
 }finally{
  if(browser)await browser.close();
  server.kill('SIGTERM');
