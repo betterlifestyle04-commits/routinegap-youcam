@@ -457,3 +457,44 @@
 @media(max-width:890px){.compare-hero{padding:30px 27px}.compare-hero-count{min-width:130px}.compare-summary-card{padding:18px}.compare-selection-section,.compare-detail-section{padding:20px}.compare-decision-summary,.compare-safety-note{flex-direction:column;align-items:stretch}.compare-matrix{min-width:720px}}
 @media(max-width:610px){.compare-hero{flex-direction:column;align-items:stretch;padding:24px 20px}.compare-hero-count{align-self:flex-start;display:flex;align-items:center;gap:14px;min-width:0;padding:10px 17px}.compare-hero-count strong{font-size:34px}.compare-hero-count strong span{font-size:17px}.compare-hero-count small{font-size:9px}.compare-summary-grid{grid-template-columns:1fr 1fr;gap:9px}.compare-summary-card{padding:15px}.compare-summary-card:last-child{grid-column:1/-1}.compare-summary-card strong{font-size:27px}.compare-filter-bar{grid-template-columns:1fr}.compare-section-head{flex-direction:column}.compare-candidate{flex-wrap:wrap}.compare-candidate .tiny-btn{margin-left:auto}.compare-matrix th,.compare-matrix td{padding:12px}.compare-detail-section{padding:16px}.compare-empty-state{padding:32px 17px}}
 @media(prefers-reduced-motion:reduce){.compare-candidate{transition:none}}
+
+
+/* Local-first command search, shareable navigation, and keyboard treatment. */
+.workspace-search-opener{display:inline-flex;gap:9px;align-items:center;justify-content:center;padding:9px 12px;border:1px solid #d7e3d3;background:#fff;border-radius:11px;color:#5a745e;font-size:12px;font-weight:800;min-width:134px}
+.workspace-search-opener>span:first-child{font-size:21px;font-weight:500;line-height:1}
+.workspace-search-opener kbd{font:700 10px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;color:#78947b;border:1px solid #e1e9df;border-radius:5px;padding:4px 5px;background:#f6faf3;margin-left:auto}
+.workspace-search-opener:hover,.workspace-search-opener:focus-visible{border-color:#87b18b;background:#edf6e8;outline:2px solid #80a98b;outline-offset:1px}
+.command-overlay[hidden]{display:none!important}
+body.is-command-open{overflow:hidden}
+.command-overlay{position:fixed;inset:0;z-index:120;display:flex;align-items:flex-start;justify-content:center;padding:clamp(30px,11vh,110px) 16px 30px}
+.command-backdrop{position:absolute;inset:0;background:#132b22ad;backdrop-filter:blur(7px)}
+.command-dialog{position:relative;z-index:1;width:min(680px,100%);max-height:min(710px,calc(100vh - 90px));overflow:hidden;display:flex;flex-direction:column;border:1px solid #d0e0cf;background:#fff;border-radius:22px;box-shadow:0 35px 100px #0b1f1999;animation:command-appear .18s ease-out}
+@keyframes command-appear{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.command-search-box{padding:19px 22px;display:flex;align-items:center;gap:13px;border-bottom:1px solid #ebf0e6}
+.command-search-icon{font-size:30px;line-height:1;color:#7a9f83}
+.command-search-box input{flex:1;min-width:0;padding:7px 0;border:0;outline:none;background:transparent;color:#284d3b;font-size:17px}
+.command-search-box input::placeholder{color:#9caea1}
+.command-escape{background:#f2f5ef;border:1px solid #dbe6d8;border-radius:8px;color:#718774;font-size:10px;font-weight:850;letter-spacing:1px;padding:8px 10px}
+.command-escape:focus-visible{outline:3px solid #6c9a75}
+.command-body{overflow-y:auto;min-height:190px;padding:19px 20px}
+.command-body h2{font:normal 24px Georgia,serif;margin:0;color:#2b513e;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.command-body h2 span{font:800 10px system-ui,sans-serif;letter-spacing:1px;color:#76a084}
+.command-hint{font-size:11px;line-height:1.65;color:#859a87;margin:8px 0 13px}
+.command-results{display:flex;flex-direction:column;gap:5px}
+.command-result{appearance:none;border:1px solid transparent;background:#fff;display:flex;align-items:center;width:100%;gap:12px;text-align:left;padding:11px 12px;border-radius:12px;min-height:65px;color:#315942;cursor:pointer}
+.command-result:hover,.command-result:focus-visible{background:#edf6e9;border-color:#b6d0b4;outline:2px solid #8aaf8d;outline-offset:-2px}
+.command-result-icon{width:42px;height:42px;display:grid;place-items:center;flex-shrink:0;border-radius:11px;background:#e8f2e8;color:#4c8259;font-size:22px}
+.command-result-icon.concept{background:#f4ede0;color:#9b7952}
+.command-result-icon.owned{background:#e4edf1;color:#557a87}
+.command-result-label{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}
+.command-result-label strong{font-size:13px;color:#30533d;overflow-wrap:anywhere}
+.command-result-label small{font-size:11px;color:#8a9b8b;line-height:1.4}
+.command-result-type{font-size:9px;font-weight:850;letter-spacing:.05em;color:#78947a;text-align:right;white-space:nowrap}
+.command-empty{border:1px dashed #c8dbc6;background:#f7faf5;border-radius:13px;text-align:center;padding:34px;color:#7b9180;font-size:12px;line-height:1.7}
+.command-footer{display:flex;gap:15px;align-items:center;flex-wrap:wrap;padding:12px 23px;background:#f8faf6;border-top:1px solid #edf1ea;color:#90a294;font-size:10px}
+.command-footer>span:last-child{margin-left:auto}
+.command-footer kbd{display:inline-flex;align-items:center;justify-content:center;min-width:20px;border:1px solid #dbe5d8;border-radius:5px;padding:4px;background:#fff;color:#6b8971;font:800 10px ui-monospace,monospace}
+@media(max-width:950px){.workspace-search-opener{min-width:0}.workspace-search-opener kbd{display:none}}
+@media(max-width:760px){.workspace-search-opener{padding:7px 9px}.workspace-search-opener>span:nth-child(2){font-size:11px}.top-actions{gap:7px}.command-overlay{padding:24px 12px}.command-dialog{max-height:calc(100dvh - 50px)}.command-result-type{font-size:8px}.command-search-box{padding:15px 14px}.command-search-box input{font-size:14px}.command-body{padding:16px 13px}.command-footer{gap:8px;padding:10px 15px}.command-footer>span:last-child{width:100%;margin-left:0}}
+@media(max-width:450px){.workspace-search-opener>span:nth-child(2){display:none}.workspace-search-opener>span:first-child{font-size:22px}.command-result{gap:9px;padding:9px 8px}.command-result-type{display:none}.command-body h2{font-size:20px}}
+@media(prefers-reduced-motion:reduce){.command-dialog{animation:none}}
