@@ -83,6 +83,38 @@ try{
  await shown(desktop,'#view-help:not(.hidden) #help-article-erase[open]');
  assert.equal(new URL(desktop.url()).hash,'#/help');
 
+ // Preference Studio: confirm that Cancel preserves stored settings and Save updates them.
+ await desktop.goto(base+'/#/overview',{waitUntil:'networkidle'});
+ const priorSettings=await desktop.evaluate(()=>localStorage.getItem('routinegap_state'));
+ await desktop.locator('#launch-preference-studio').click();
+ await shown(desktop,'#preference-overlay:not([hidden]) #preference-title');
+ await desktop.locator('[data-pref-goal="oiliness"]').click();
+ await desktop.locator('[data-pref-action="next"]').click();
+ await desktop.locator('[data-pref-budget="75"]').click();
+ await desktop.locator('[data-pref-action="next"]').click();
+ await shown(desktop,'#pref-fragrance');
+ await desktop.locator('#pref-fragrance').check();
+ await desktop.keyboard.press('Escape');
+ assert.equal(await desktop.locator('#preference-overlay').isVisible(),false);
+ assert.equal(await desktop.evaluate(()=>localStorage.getItem('routinegap_state')),priorSettings,'Canceled preference changes must not persist');
+ await desktop.locator('#launch-preference-studio').click();
+ await desktop.locator('[data-pref-goal="texture"]').click();
+ await desktop.locator('[data-pref-action="next"]').click();
+ await desktop.locator('[data-pref-budget="75"]').click();
+ await desktop.locator('[data-pref-action="next"]').click();
+ await desktop.locator('#pref-fragrance').check();
+ await desktop.locator('[data-pref-action="apply"]').click();
+ const settings=await desktop.evaluate(()=>JSON.parse(localStorage.getItem('routinegap_state')));
+ assert.equal(settings.goal,'texture');
+ assert.equal(settings.budget,75);
+ assert.equal(settings.fragranceFree,true);
+ assert.equal(await desktop.locator('#preference-overlay').isVisible(),false);
+ await desktop.locator('#navigation [data-tab="shop"]').click();
+ await shown(desktop,'#view-shop:not(.hidden) #goal');
+ assert.equal(await desktop.locator('#goal').inputValue(),'texture');
+ assert.equal(await desktop.locator('#budget').inputValue(),'75');
+ assert.equal(await desktop.locator('#fragrance').isChecked(),true);
+
  const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
  monitor(mobile);
  await mobile.goto(base+'/#/overview',{waitUntil:'networkidle'});
@@ -100,10 +132,17 @@ try{
  assert.equal(await mobile.locator('#mobile-more-overlay').isVisible(),false);
  await mobile.locator('#mobile-dock [data-mobile-tab="overview"]').click();
  await shown(mobile,'#view-overview:not(.hidden)');
+ await mobile.locator('#launch-preference-studio').click();
+ await shown(mobile,'#preference-overlay:not([hidden])');
+ await mobile.locator('[data-pref-action="next"]').click();
+ await shown(mobile,'#pref-budget-range');
+ await mobile.keyboard.press('Escape');
+ assert.equal(await mobile.locator('#preference-overlay').isVisible(),false);
+
 
  assert.deepEqual(providerCalls,[],'Tour and Help must never submit a scan');
  assert.deepEqual(errors,[],'No client-side JavaScript exceptions are allowed');
- console.log('Chromium smoke passed: 10-section navigation, 33 FAQs, article search, demo scan, six-stop tour, global search, mobile dock and no paid API calls.');
+ console.log('Chromium smoke passed: 10-section navigation, 33 FAQs, article search, demo scan, six-stop tour, global search, mobile dock, preference save/cancel and no paid API calls.');
 }finally{
  if(browser)await browser.close();
  server.kill('SIGTERM');
