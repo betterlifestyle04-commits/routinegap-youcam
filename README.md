@@ -16,6 +16,18 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## New: Contextual Launchpad and thumb-friendly mobile navigation
+
+RoutineGap's Overview now has a **local-first contextual Launchpad** whose next-step recommendation comes from actual user-entered shelf entries, checklist checkmarks recorded for the current local date, and saved/compared fictional concept IDs. It transparently separates an illustrative starter shelf from genuine ownership and distinguishes sample skin observations from a real YouCam report. The four launchpad steps are optional navigation prompts—not a clinical score, verified spending savings, a shopping obligation, or historical tracking.
+
+- **Home/start:** If the browser contains only sample shelf entries or none, the next suggested action is *add real products*. Otherwise the user is guided toward reviewing the daily routine, then exploring fictional examples if desired.
+- **Provenance-preserving metrics:** Basic category coverage is derived from real, user-entered products only. Checklist completion is counted only for the locally matching day and valid owned step identifiers; sample steps are excluded. Saved and compared ideas are not counted as purchases.
+- **Honest existing metrics:** The previous Overview phrase “Duplicate purchases avoided” is replaced with “Covered concepts flagged”, with an explicit note that these are rules-based demo labels, not verified purchases or realized savings. Sample inventory is no longer presented without a clearly illustrative heading.
+- **Mobile navigation:** At viewport widths of 760px or below, a fixed accessible five-way bottom dock exposes Home, My Shelf, Skin Scan, Explore and More. The More dialog provides the remaining five routes (Routine Planner, Insights, Compare Lab, Decision Trail, Privacy & Data). All nine routes preserve history/direct URLs. Mobile notches and safe areas, large tap targets, keyboard Escape and focus management are supported.
+- **No new private records:** The launchpad reads existing browser-local data. It adds no persistent keys, account tracking, analytics collection or third-party requests. Existing privacy controls remain the source of truth for deletion.
+
+Tests verify zero fictitious ownership, accurate category coverage, current-day checkmarks and invalid entries, optional product discovery, sample-vs-real scan labels, all nine mobile routes, responsive markup, focus controls, and removal of misleading purchases-avoided wording.
+
 ## New: photo readiness diagnostics and local capture self-check
 
 The Skin Analysis workspace now includes a **Photo Readiness Dashboard** next to the actual upload action. It explains YouCam input constraints without inventing a face-quality score or implying that image-content quality has been assessed.
