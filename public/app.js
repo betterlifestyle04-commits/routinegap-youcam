@@ -53,12 +53,17 @@ function readUncertainSubmission(){
  }catch{return null;}
 }
 function saveUncertainSubmission(marker){
- state.uncertainSubmission=marker;
  try{
   if(marker)sessionStorage.setItem(UNCERTAIN_SCAN_KEY,JSON.stringify(marker));
   else sessionStorage.removeItem(UNCERTAIN_SCAN_KEY);
+  state.uncertainSubmission=marker;
   return true;
- }catch{return false;}
+ }catch{
+  // Failure to persist a new warning must still block retry in this open tab.
+  // Failure to ERASE must never silently unblock another chargeable upload.
+  if(marker)state.uncertainSubmission=marker;
+  return false;
+ }
 }
 const state={scanPhase:'idle',scanPoll:0,uncertainSubmission:readUncertainSubmission(),preferenceStudio:null,helpQuery:'',helpCategory:'all',productTour:null,photoSelfChecks:{},storyId:null,tab:parseWorkspaceHash(window.location.hash)||'overview',globalSearchQuery:'',compareIds:(()=>{try{return normalizeCompareIds(localStorage.getItem(COMPARE_KEY),catalog);}catch{return [];}})(),compareQuery:'',compareStep:'all',insightBudget:null,shelfQuery:'',editingId:null,undoShelf:null,savedIds:(()=>{try{return normalizeSavedConcepts(localStorage.getItem(SAVED_CONCEPTS_KEY),catalog);}catch{return [];}})(),catalogQuery:'',catalogStep:'all',catalogDecision:'all',catalogSort:'recommended',savedOnly:false,affordableOnly:false,routineLog:(()=>{try{return localStorage.getItem(ROUTINE_LOG_KEY);}catch{return null;}})(),shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:savedLiveReport?.signals||null,scanSource:savedLiveReport?'live':null,savedLiveReport:!!savedLiveReport,cartIds:[],file:null,sourceFile:null,preview:null,imageReady:false,imageDimensions:null,canPrepare:false,preparing:false,photoPlan:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false,goalFromScan:null};
 try{const saved=JSON.parse(localStorage.getItem('routinegap_state')||'null');if(saved&&typeof saved==='object'){
