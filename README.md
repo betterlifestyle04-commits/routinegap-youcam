@@ -16,6 +16,19 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## New: Privacy & Data Center with scoped controls
+
+**Privacy & Data** is a first-class ninth workspace, available in navigation, global search, and at `/#/privacy`. A visually structured dashboard inventories only six known RoutineGap browser storage groups, displays whether each actually exists in the browser, and provides deletion and export controls.
+
+- Inventory groups: user shelf and purchase preferences (localStorage), saved fictional concept IDs (localStorage), up-to-three compared concept IDs (localStorage), daily routine checkmarks (localStorage), an optional validated real YouCam observation summary (sessionStorage, maximum 24h) and a pending provider task receipt (sessionStorage).
+- Delete each group independently or select **Erase all RoutineGap browser data**. A confirmation explicitly precedes changes. Deletion removes only exact allowlisted application keys; it **never calls `localStorage.clear()` or `sessionStorage.clear()`**, so unrelated site/application records are not erased. Removal is verified; errors never masquerade as success. Reloading also clears in-memory selected photos and sample screens.
+- Download real user-entered shelf JSON through the existing strict exporter; export a local Markdown decision brief; no photos, provider secrets, pending-scan receipts or private demo passcodes are included in the inventory backup.
+- Truthful provenance: sample starter inventory does not count as genuinely owned products. A browser-only deletion **cannot** cancel an already submitted Perfect Corp/YouCam job, recall an uploaded face photo, remove provider-held data or delete files the user already downloaded. The UI says this prominently.
+- External storage sync, accounts and provider-side deletion are **not** implemented, and the dashboard does not claim to perform them.
+- Data summaries are local-only; no new third-party API calls, scan fees, analytics collection or checkout features are introduced.
+
+Dedicated regression tests cover scoped deletion, blocked-storage error handling, preservation of unrelated keys, inventory provenance, session-vs-local separation, and UI navigation.
+
 ## New: keyboard command search, private global discovery, and shareable workspace routes
 
 The platform now supports **Ctrl+K / Cmd+K** and the top-bar **Search** button. A designed accessible dialog finds all eight functional workspaces, all fictional catalog concepts, and—only when a real inventory is entered—actual browser-local shelf entries. It searches names, categories, tags and navigation aliases without asking a server for results. The first results are useful workspace quick links. Selecting a fictional concept opens the Shopping Studio with the exact idea visible; selecting a real owned item opens a filtered My Shelf view. Search results explicitly distinguish **user-entered products** from **fictional product concepts**.
