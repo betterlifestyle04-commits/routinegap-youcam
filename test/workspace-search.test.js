@@ -7,9 +7,9 @@ import {WORKSPACE_PAGES,parseWorkspaceHash,workspaceHash,searchWorkspace} from '
 const real=[{id:'user-a',name:'My gentle moisturiser',step:'moisturizer',price:21,tags:['hydrating']},
  {id:'user-b',name:'My sunscreen',step:'spf',price:12,tags:['lightweight']}];
 
-test('all 9 workspaces have stable, safe shareable routes',()=>{
- assert.equal(WORKSPACE_PAGES.length,9);
- assert.equal(new Set(WORKSPACE_PAGES.map(p=>p.id)).size,9);
+test('all 10 workspaces have stable, safe shareable routes',()=>{
+ assert.equal(WORKSPACE_PAGES.length,10);
+ assert.equal(new Set(WORKSPACE_PAGES.map(p=>p.id)).size,10);
  for(const page of WORKSPACE_PAGES){assert.equal(parseWorkspaceHash(workspaceHash(page.id)),page.id);}
  assert.equal(workspaceHash('anything-else'),'#/overview');
 });
@@ -23,7 +23,7 @@ test('navigation ignores malformed, private, unsupported and injected hash fragm
 });
 test('empty search gives useful, navigable quick links without fabricated products',()=>{
  const items=searchWorkspace('',{catalog,shelf:real,sampleInventory:false});
- assert.equal(items.length,9);
+ assert.equal(items.length,10);
  assert.ok(items.every(p=>p.type==='page'));
  assert.equal(items[0].title,'Overview');
 });

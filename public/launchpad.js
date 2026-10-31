@@ -15,7 +15,8 @@ export const MOBILE_MORE_TABS=Object.freeze([
  {id:'insights',label:'My insights',description:'See recorded coverage and budgets',symbol:'◴'},
  {id:'compare',label:'Compare lab',description:'Review up to three example concepts',symbol:'⇄'},
  {id:'trail',label:'Decision trail',description:'Inspect the shopping rationale',symbol:'≡'},
- {id:'privacy',label:'Privacy & data',description:'Export or erase local records',symbol:'♧'}
+ {id:'privacy',label:'Privacy & data',description:'Export or erase local records',symbol:'♧'},
+ {id:'help',label:'Help center',description:'Search guidance and troubleshooting',symbol:'?'}
 ]);
 const basics=['cleanser','moisturizer','spf'];
 export function buildLaunchpad({shelf=[],sampleInventory=true,savedIds=[],compareIds=[],routineLog=null,scanSource=null,now=new Date()}={}){

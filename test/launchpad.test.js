@@ -77,11 +77,11 @@ test('real scan provenance is distinct from a sample view, but a scan remains op
  const c=buildLaunchpad({now:date});
  assert.match(c.supporting,/optional/);
 });
-test('mobile dock and More menu cover all nine real workspaces without invented pages',()=>{
+test('mobile dock and More menu cover all ten real workspaces without invented pages',()=>{
  assert.equal(MOBILE_TABS.length,4);
- assert.equal(MOBILE_MORE_TABS.length,5);
+ assert.equal(MOBILE_MORE_TABS.length,6);
  const tabs=[...MOBILE_TABS,...MOBILE_MORE_TABS].map(x=>x.id);
- assert.equal(new Set(tabs).size,9);
+ assert.equal(new Set(tabs).size,10);
  assert.deepEqual(new Set(tabs),new Set(WORKSPACE_PAGES.map(x=>x.id)));
  for(const tab of MOBILE_TABS)assert.equal(mobileSelection(tab.id),tab.id);
  for(const tab of MOBILE_MORE_TABS)assert.equal(mobileSelection(tab.id),'more');

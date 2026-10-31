@@ -1,0 +1,29 @@
+name: Chromium UI smoke
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop-mobile-journey:
+    name: Real browser first-run, demo and help flow
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned headless browser tools
+        run: npm install --no-save --package-lock=false playwright@1.56.1
+      - name: Install Chromium and system dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Run real interactive smoke journey
+        run: node scripts/browser-smoke.mjs
