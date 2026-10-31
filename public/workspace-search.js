@@ -34,7 +34,7 @@ function relevance(needle,values){
  }
  return best;
 }
-export function searchWorkspace(query,{catalog=[],shelf=[],sampleInventory=true,maxResults=10}={}){
+export function searchWorkspace(query,{catalog=[],shelf=[],helpArticles=[],sampleInventory=true,maxResults=10}={}){
  const q=String(query??'').trim().slice(0,80).toLocaleLowerCase('en');
  const cap=Number.isInteger(maxResults)?Math.max(1,Math.min(20,maxResults)):10;
  const results=[];
@@ -52,6 +52,14 @@ export function searchWorkspace(query,{catalog=[],shelf=[],sampleInventory=true,
          detail:'Fictional concept · '+product.step+' · demo price $'+Number(product.price||0).toFixed(0),tab:'shop',score});
      }
    }
+   if(Array.isArray(helpArticles)){
+     for(const article of helpArticles){
+       if(!article||typeof article.id!=='string'||typeof article.question!=='string')continue;
+       const score=relevance(q,[article.question,article.answer,article.keywords,article.category]);
+       if(score)results.push({type:'help',id:article.id,title:article.question,
+         detail:'Help article · '+article.category,tab:'help',score});
+     }
+   }
    if(!sampleInventory&&Array.isArray(shelf)){
      for(const p of shelf){
        if(!p||typeof p.id!=='string'||typeof p.name!=='string')continue;
@@ -62,7 +70,7 @@ export function searchWorkspace(query,{catalog=[],shelf=[],sampleInventory=true,
    }
  }
  if(!q)return results.slice(0,cap);
- const rank={page:0,owned:1,concept:2};
+ const rank={page:0,owned:1,help:2,concept:3};
  results.sort((a,b)=>b.score-a.score||rank[a.type]-rank[b.type]||a.title.localeCompare(b.title,'en'));
  return results.slice(0,cap);
 }
