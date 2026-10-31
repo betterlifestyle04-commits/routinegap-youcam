@@ -1,4 +1,5 @@
 import { normalizeScanOutput } from './recommendations.js';
+import { imageDimensions,validSkinAnalysisDimensions,skinDimensionMessage } from './image-size.js';
 const HOST='https://yce-api-01.makeupar.com';
 const TIMEOUT_MS=25000;
 export class YouCamError extends Error{constructor(message,status=502){super(message);this.name='YouCamError';this.status=status;}}
@@ -32,6 +33,9 @@ export async function startYouCamScan({bytes,mime,fileName}){
   if(!['image/jpeg','image/png'].includes(mime))throw new YouCamError('Only JPG or PNG is supported.',400);
   const magicValid=mime==='image/png'?bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])):bytes[0]===0xff&&bytes[1]===0xd8&&bytes[2]===0xff;
   if(!magicValid)throw new YouCamError('Image type does not match its file signature.',400);
+  let dimensions;
+  try{dimensions=imageDimensions(bytes,mime);}catch{throw new YouCamError('Image format or dimensions could not be read. Choose a valid JPEG or PNG.',400);}
+  if(!validSkinAnalysisDimensions(dimensions))throw new YouCamError(skinDimensionMessage(dimensions),400);
   const safeName=(fileName||'skin-photo').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,60);
   const upload=await api('/s2s/v2.0/file',{method:'POST',body:JSON.stringify({files:[{content_type:mime,file_name:safeName,file_size:bytes.length}]})});
   const first=upload?.data?.files?.[0], signed=first?.requests?.[0];
