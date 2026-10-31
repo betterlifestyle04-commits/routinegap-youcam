@@ -58,6 +58,14 @@ For a fresh Codex environment, use **Node.js 22**, run `npm run check && npm tes
 
 See [AGENTS.md](AGENTS.md) for the full setup recipe, repository structure, security rules and recovery steps.
 
+## End-to-end simulated provider acceptance tests
+
+The Node test suite exercises the actual HTTP server endpoints against **mock Perfect Corp and S3 responses**: free API-key preflight, protected passcode and photo consent, file metadata, signed upload, skin task creation, signed task receipt, running-to-success polling, vendor score parsing and rejection of tampered receipts. It uses a synthetic, header-only image fixture; **no real person is scanned, no provider is contacted and no credits are spent by this test**.
+
+The live status adapter also turns known official vendor failure codes (no face, multiple people, bad lighting, off-angle face, insufficient dimensions, unsupported file) into fixed, actionable user guidance. Unknown or missing task states are errors, **not** endless indefinite polling. It deliberately does not expose raw provider error messages, which could contain untrusted text.
+
+**Remaining limitation:** Mock-backed full-flow tests provide much stronger compatibility evidence but do **not** verify successful real-world processing. Before submission, complete a consented photo scan with real YouCam and confirm a returned report.
+
 ## Local setup
 
 ```bash
