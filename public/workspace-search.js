@@ -59,6 +59,7 @@ export function searchWorkspace(query,{catalog=[],shelf=[],sampleInventory=true,
      }
    }
  }
+ if(!q)return results.slice(0,cap);
  const rank={page:0,owned:1,concept:2};
  results.sort((a,b)=>b.score-a.score||rank[a.type]-rank[b.type]||a.title.localeCompare(b.title,'en'));
  return results.slice(0,cap);
