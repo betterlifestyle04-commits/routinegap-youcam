@@ -11,11 +11,12 @@ test('sample report is unambiguously labeled, with real cart total and overspend
   const text=createDecisionBrief({...input,scanSource:'sample',signals:sampleScan,goalFromScan:'sample'});
   assert.match(text,/ILLUSTRATIVE SAMPLE — NOT YOUCAM/);
   assert.match(text,/ILLUSTRATIVE SAMPLE INVENTORY/);
+  assert.match(text,/- Daily SPF/);
   assert.match(text,/Demo total: \$23\.00/);
   assert.match(text,/Budget: \$20\.00/);
   assert.match(text,/OVER BUDGET by \$3\.00/);
   assert.match(text,/UI score 70\/100 \(vendor presentation score, not probability\)/);
-  assert.match(text,/explicitly chosen by user after reviewing the labeled example report/);
+  assert.match(text,/Explicitly chosen by user after reviewing the labeled example report/);
   assert.match(text,/no live merchant, checkout, order or review/);
 });
 test('a real report is labeled vendor observation, not clinical efficacy',()=>{
