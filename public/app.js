@@ -131,8 +131,97 @@ ${goals.some(g=>g.id===x.type)?`<button type="button" class="scan-focus-action" 
     <p class="photo-guide-footnote">These tools can inspect, crop, export or downsize an existing high-quality photo, but <b>cannot restore missing skin detail</b> to a low-resolution image. See <a href="https://docs.perfectcorp.com/reference/ai_skin_analysis/section/overview/file-specs-and-errors" target="_blank" rel="noopener noreferrer">Perfect Corp's official photo specifications ↗</a>.</p>
   </div>
 </section>`;}
-function renderShelf(d){$('#view-shelf').innerHTML=`${title('YOUR PRODUCTS','Make the most of what you have','Add products you already use. We flag redundant shopping steps before suggesting anything new. Your shelf and budget are stored in this browser only.')}
-<div class="two-col" style="grid-template-columns:1fr 1.4fr"><div class="panel"><div class="eyebrow">ADD TO YOUR SHELF</div><h3 style="margin:9px 0 18px">Record a product you own</h3><form id="add-product"><div class="field"><label for="owned-name">Product name</label><input id="owned-name" required maxlength="90" placeholder="e.g. My gentle face wash"></div><div class="forms" style="margin-top:14px"><div class="field"><label for="owned-step">Routine step</label><select id="owned-step">${Object.entries(stepLabels).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div><div class="field"><label for="owned-price">Purchase price (USD)</label><input id="owned-price" type="number" min="0" max="10000" value="15"></div></div><div class="field" style="margin-top:14px"><label for="owned-tags">Tags (comma-separated, optional)</label><input id="owned-tags" maxlength="140" placeholder="hydrating, fragrance-free"></div><button class="primary" style="margin-top:16px" type="submit">Add to shelf +</button><p class="muted small">Your first real product replaces the example starter shelf; sample products will not be treated as your own.</p></form><div class="separator"></div><button class="tiny-btn" id="reset-shelf">Load illustrative starter shelf</button><button class="tiny-btn" id="clear-shelf" style="margin-left:6px">Clear shelf</button></div><div class="panel"><div class="eyebrow">YOUR INVENTORY</div><h3 style="margin:9px 0 12px">${d.owned.length} products on file ${state.sampleInventory?'<span class="label-pill peach">SAMPLE INVENTORY</span>':''}</h3>${d.owned.length?d.owned.map(x=>`<div class="list-row"><div><strong>${escape(x.name)}</strong><div class="muted small">${escape(stepLabels[x.step])} · ${escape(x.tags.join(' · '))}</div></div><button class="tiny-btn" data-remove="${escape(x.id)}" aria-label="Remove ${escape(x.name)}">Remove</button></div>`).join(''):'<div class="empty">Your shelf is empty. Start with a product you already own.</div>'}<div class="panel-actions"><button class="secondary" data-go="shop">Compare with catalog →</button></div></div></div>`;}
+function renderShelfResults(d) {
+  const q=state.shelfQuery.trim().toLocaleLowerCase('en');
+  const results=d.owned.filter(item=>[item.name,stepLabels[item.step],...item.tags].join(' ').toLocaleLowerCase('en').includes(q));
+  const counter=$('#shelf-count');if(counter)counter.textContent=results.length+' / '+d.owned.length+' visible';
+  const target=$('#shelf-inventory');if(!target)return;
+  target.innerHTML=results.length?results.map(item=>`<article class="shelf-owned-row">
+    <div class="shelf-owned-icon" aria-hidden="true">${item.step==='spf'?'☀':item.step==='moisturizer'?'◒':item.step==='serum'?'✦':'◌'}</div>
+    <div class="shelf-owned-copy"><strong>${escape(item.name)}</strong><span>${escape(stepLabels[item.step])} · ${money(item.price)} recorded purchase price</span><small>${item.tags.length?escape(item.tags.join(' · ')):'No additional tags'}</small></div>
+    <div class="shelf-owned-actions"><button type="button" class="tiny-btn" data-edit="${escape(item.id)}" ${state.sampleInventory?'disabled title="Replace the sample shelf with your real products to edit"':''}>Edit</button>
+    <button type="button" class="tiny-btn" data-remove="${escape(item.id)}" aria-label="${escape('Remove '+item.name)}">Remove</button></div>
+  </article>`).join(''):`<div class="empty">${d.owned.length?'No shelf products match your search. Try fewer words.':'Your shelf is empty. Add your first product to get started.'}</div>`;
+}
+function renderShelf(d) {
+ const editing=!state.sampleInventory?d.owned.find(p=>p.id===state.editingId):null;
+ $('#view-shelf').innerHTML=`${title('YOUR PRODUCTS','Your personal shelf','Manage what you actually own. Search, correct product details, and keep a private backup of your inventory. Example starter products are never silently treated as real ownership.')}
+ <div class="shelf-header-stats">
+ <div><span>Recorded products</span><strong>${d.owned.length}</strong><small>${state.sampleInventory?'Illustrative preview':'Browser-local inventory'}</small></div>
+ <div><span>Routine steps covered</span><strong>${new Set(d.owned.filter(x=>['cleanser','moisturizer','spf'].includes(x.step)).map(x=>x.step)).size} / 3</strong><small>${state.sampleInventory?'Preview only':'Category-based overview'}</small></div>
+ <div><span>Inventory provenance</span><strong class="shelf-provenance">${state.sampleInventory?'SAMPLE':'USER-ENTERED'}</strong><small>No account or cloud sync</small></div></div>
+ <div class="shelf-workspace">
+ <div class="shelf-editor-column"><section class="panel shelf-editor">
+ <div class="eyebrow">ADD TO YOUR SHELF</div><h3>Record an item you own</h3>
+ <form id="add-product"><div class="field"><label for="owned-name">Product name</label><input id="owned-name" name="name" required maxlength="90" placeholder="e.g. My gentle face wash"></div>
+ <div class="forms" style="margin-top:14px"><div class="field"><label for="owned-step">Routine step</label><select id="owned-step">${Object.entries(stepLabels).map(([k,v])=>`<option value="${k}">${escape(v)}</option>`).join('')}</select></div>
+ <div class="field"><label for="owned-price">Purchase price (USD)</label><input id="owned-price" type="number" min="0" max="10000" step=".01" value="15"></div></div>
+ <div class="field" style="margin-top:14px"><label for="owned-tags">Tags (optional, comma-separated)</label><input id="owned-tags" maxlength="140" placeholder="hydrating, fragrance-free"></div>
+ <button class="primary" type="submit" style="margin-top:16px">Add to shelf +</button>
+ <p class="muted small">Adding your first real item replaces the illustrative starter shelf. Maximum ${SHELF_LIMIT} products; don't enter medical records or private credentials.</p></form>
+ </section>
+ ${editing?`<section class="panel shelf-edit-panel"><div class="eyebrow">EDIT AN OWNED PRODUCT</div><h3>Update ${escape(editing.name)}</h3>
+ <form id="edit-product"><input type="hidden" id="edit-owned-id" value="${escape(editing.id)}">
+ <div class="field"><label for="edit-owned-name">Product name</label><input id="edit-owned-name" required maxlength="90" value="${escape(editing.name)}"></div>
+ <div class="forms" style="margin-top:14px"><div class="field"><label for="edit-owned-step">Routine step</label><select id="edit-owned-step">${Object.entries(stepLabels).map(([id,label])=>`<option value="${id}" ${editing.step===id?'selected':''}>${escape(label)}</option>`).join('')}</select></div>
+ <div class="field"><label for="edit-owned-price">Purchase price (USD)</label><input type="number" min="0" max="10000" step=".01" id="edit-owned-price" value="${editing.price}"></div></div>
+ <div class="field" style="margin-top:14px"><label for="edit-owned-tags">Tags</label><input id="edit-owned-tags" maxlength="140" value="${escape(editing.tags.join(', '))}"></div>
+ <div class="panel-actions"><button class="primary" type="submit">Save changes</button><button class="ghost" id="cancel-edit" type="button">Cancel</button></div></form></section>`:''}
+ <section class="panel shelf-data-panel"><div class="eyebrow">DATA & CONTROL</div><h3>Your inventory belongs to you.</h3>
+ <p class="muted small">Export a JSON copy or restore one from another browser. All processing is on your device; uploads never reach RoutineGap or YouCam. Backups intentionally exclude photos, scans, passcodes and receipts.</p>
+ <div class="shelf-data-actions"><button class="secondary" id="export-shelf" type="button" ${state.sampleInventory?'disabled title="Sample inventory cannot be exported as real user data"':''}>↓ Export shelf (.json)</button>
+ <button class="ghost" id="import-shelf-trigger" type="button">↑ Import backup</button><input class="sr-only" id="shelf-import" type="file" accept=".json,application/json" aria-label="Choose RoutineGap shelf JSON backup"></div>
+ <p class="muted small">Import replaces the existing product list and preferences only after confirmation. Keep JSON backups private because they contain product names you entered.</p>
+ </section></div>
+ <section class="panel shelf-inventory-panel"><div class="shelf-inventory-top"><div><div class="eyebrow">MY INVENTORY</div><h3>What's already on your shelf?</h3></div>
+ <span class="label-pill ${state.sampleInventory?'peach':''}">${state.sampleInventory?'SAMPLE INVENTORY':'OWNED PRODUCTS'}</span></div>
+ <div class="shelf-search-row"><label for="shelf-search">Search your shelf</label><input id="shelf-search" type="search" maxlength="80" placeholder="Search name, type or tag…" value="${escape(state.shelfQuery)}"><span id="shelf-count" aria-live="polite"></span></div>
+ ${state.undoShelf?'<div class="shelf-undo"><span>A recent shelf change can be reversed.</span><button id="undo-shelf" class="secondary" type="button">Undo change</button></div>':''}
+ <div id="shelf-inventory"></div>
+ <div class="shelf-actions-footer"><button class="tiny-btn" id="reset-shelf" type="button">Load illustrative starter shelf</button>
+ <button class="tiny-btn" id="clear-shelf" type="button">Clear shelf</button>
+ <button class="secondary" data-go="routine" type="button">Build my routine →</button></div>
+ <p class="muted small">Category matches indicate possible duplicate routine steps, not ingredient equivalence, product efficacy, or medical suitability.</p>
+ </section></div>`;
+ renderShelfResults(d);
+}
+function snapshotShelf(){
+ state.undoShelf={shelf:state.shelf.map(p=>({...p,tags:[...(p.tags||[])]})),sampleInventory:state.sampleInventory};
+}
+function finishShelfMutation(clearChecks=false){
+ state.editingId=null;
+ if(clearChecks){state.routineLog=null;try{localStorage.removeItem(ROUTINE_LOG_KEY);}catch{}}
+ const validIds=new Set(decide().rows.filter(p=>p.decision!=='skip').map(p=>p.id));
+ state.cartIds=state.cartIds.filter(id=>validIds.has(id));
+ persist();
+ renderShelf(decide());
+}
+function downloadShelfBackup(){
+ try{
+   const report=makeShelfBackup({shelf:state.shelf,budget:state.budget,goal:state.goal,fragranceFree:state.fragranceFree,sampleInventory:state.sampleInventory});
+   const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json;charset=utf-8'});
+   const url=URL.createObjectURL(blob);
+   const anchor=document.createElement('a');anchor.href=url;anchor.download='routinegap-shelf-backup.json';
+   document.body.appendChild(anchor);anchor.click();anchor.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),2000);
+   notice('Shelf backup downloaded locally. Keep it private; it contains your entered product names.');
+ }catch(e){notice(e.message||'Could not export your shelf.',true);}
+}
+async function importShelfBackup(file){
+ if(!file)return;
+ if(file.size>SHELF_BACKUP_MAX_BYTES||file.size===0)return notice('Select a nonempty RoutineGap backup JSON file no larger than 64 KB.',true);
+ try{
+   const imported=readShelfBackup(await file.text());
+   if(!window.confirm('Restore '+imported.shelf.length+' products and saved shopping preferences? This replaces your current shelf and settings on this device. Your scan data and separate saved concept board are not imported.'))return;
+   snapshotShelf();
+   state.shelf=imported.shelf;
+   state.budget=imported.preferences.budget;state.goal=imported.preferences.goal;
+   state.fragranceFree=imported.preferences.fragranceFree;state.goalFromScan=null;
+   state.sampleInventory=false;state.shelfQuery='';
+   finishShelfMutation(true);
+   notice('Backup restored locally: '+imported.shelf.length+' owned products. No data was uploaded.');
+ }catch(e){notice(e.message||'Could not import this backup. Your existing shelf was left unchanged.',true);}
+}
 function renderRoutine(d){
   const plan=buildRoutinePlan(d.owned), day=localRoutineDate(), sample=state.sampleInventory;
   const log=sample?{date:day,done:[]}:readRoutineLog(state.routineLog,day,plan);
