@@ -46,5 +46,5 @@ test('opt-in is explicit; never store photos, passcodes or receipts; user can de
   assert.match(app,/state\.scanSource!=='live'/);
   assert.match(app,/sessionStorage\.setItem\(LIVE_REPORT_SESSION_KEY,JSON\.stringify\(cleaned\)\)/);
   assert.match(app,/sessionStorage\.removeItem\(LIVE_REPORT_SESSION_KEY\)/);
-  assert.match(app,/state\.scan:savedLiveReport\?\.signals/);
+  assert.match(app,/scan:savedLiveReport\?\.signals/);
 });
