@@ -16,6 +16,17 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## Judge-friendly, 60-second sample walkthrough
+
+The Overview dashboard includes an **opt-in, free guided demo**. Click **Start illustrative walkthrough** to load **clearly labeled synthetic example skin values** without sending a face photo, calling YouCam or using the private demo passcode.
+
+1. **Skin Analysis:** inspect the illustrative example and click **Choose as shopping focus** for one supported cosmetic metric.
+2. **My Shelf:** review the explicitly labeled sample inventory; you can add real user-owned products or reset to the sample yourself.
+3. **Shopping Studio:** review duplicate prevention, budget limits, optional concepts, and selections. The Overview summary now displays the **actual user's selected cart**, not an automatic suggestion pretending to be a purchased cart.
+4. **Decision Trail:** inspect provenance and download a privately generated, source-labeled Markdown decision brief.
+
+This path is for demonstrating product UX and heuristic explainability. It does **not** verify a completed paid YouCam analysis. That remains a separate, consented provider-backed test before Devpost submission.
+
 ## Export a decision brief (private, local)
 
 From **Decision Trail**, select **Download decision brief (.md)** to save a readable, privacy-conscious Markdown report directly in your browser. It records whether the source was a *real YouCam observation*, a clearly labeled *illustrative sample*, or *no scan*, as well as your explicitly chosen cosmetic preference, stored product shelf, optional concept recommendations, duplicate-avoidance rationale, selected demo cart and its **actual total** against your budget. Manual cart selections that exceed budget are marked **OVER BUDGET**, not falsely shown as compliant. It does not send report data to a server and **never includes the source selfie, API key, demo passcode, or signed scan receipt**. Be careful sharing reports about real people; it is cosmetic context and not medical advice.
