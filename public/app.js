@@ -606,7 +606,7 @@ function renderHelpResults(){
  if(!results.length){
   target.innerHTML=`<div class="help-empty-state"><span aria-hidden="true">⌕</span><h3>No matching help articles</h3>
    <p>Try a shorter search, another topic, or browse all 33 knowledge-base answers.</p>
-   <button type="button" class="secondary" id="help-clear-search">Show all articles →</button></div>`;
+   <button type="button" class="secondary" data-help-reset="true">Show all articles →</button></div>`;
   return;
  }
  target.innerHTML=results.map((article,index)=>{
@@ -1070,7 +1070,7 @@ document.addEventListener('keydown',event=>{
 window.addEventListener('resize',()=>{if(window.innerWidth>760)closeMobileMore({restoreFocus:false});});
 document.addEventListener('click',event=>{
  const helpCategory=event.target.closest('[data-help-category]');if(helpCategory){state.helpCategory=helpCategory.dataset.helpCategory;renderHelpResults();return;}
- if(event.target.closest('#help-clear-search')){state.helpQuery='';state.helpCategory='all';const input=$('#help-search');if(input){input.value='';input.focus();}renderHelpResults();return;}
+ if(event.target.closest('#help-clear-search')||event.target.closest('[data-help-reset]')){state.helpQuery='';state.helpCategory='all';const input=$('#help-search');if(input){input.value='';input.focus();}renderHelpResults();return;}
  const helpOpen=event.target.closest('[data-help-open]');if(helpOpen){const article=HELP_ARTICLES.find(a=>a.id===helpOpen.dataset.helpOpen);if(!article)return;state.helpCategory='all';state.helpQuery=article.question;navigate('help');return;}
  if(event.target.closest('#global-product-tour')){startProductTour();return;}
  if(event.target.closest('#product-tour-close')){stopProductTour();return;}
