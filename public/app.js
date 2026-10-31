@@ -11,6 +11,7 @@ import {buildLaunchpad,mobileSelection,MOBILE_TABS,MOBILE_MORE_TABS} from '/laun
 import {TOUR_STEPS,tourSummary,moveTour} from '/product-tour.js';
 import {HELP_ARTICLES,HELP_CATEGORIES,filterHelp,helpCategoryCounts,contextualHelp,validHelpTab} from '/help-center.js';
 import {PREF_STAGES,DEMO_BUDGETS,normalizePreferenceDraft,modifyPreferenceDraft,preferencePreview,stepPreferenceStage,differentPreferences} from '/preference-studio.js';
+import {UNCERTAIN_SCAN_KEY,newUncertainMarker,readUncertainMarker,classifyStartResponse,scanJourney} from '/scan-journey.js';
 import {planLocalPhoto,preparePhotoLocally,PHOTO_SOURCE_MAX_BYTES} from '/photo-tools.js';
 import {SELF_CHECKS,toggleSelfCheck,photoReadiness} from '/photo-readiness.js';
 import {createDecisionBrief} from '/report-export.js';
@@ -41,9 +42,25 @@ function readPendingScan(){
 function savePendingScan(pending){
   state.pending=pending;
   try{if(pending)sessionStorage.setItem(PENDING_SCAN_KEY,JSON.stringify(pending));
-      else sessionStorage.removeItem(PENDING_SCAN_KEY);}catch{}
+      else sessionStorage.removeItem(PENDING_SCAN_KEY);return true;}catch{return false;}
 }
-const state={preferenceStudio:null,helpQuery:'',helpCategory:'all',productTour:null,photoSelfChecks:{},storyId:null,tab:parseWorkspaceHash(window.location.hash)||'overview',globalSearchQuery:'',compareIds:(()=>{try{return normalizeCompareIds(localStorage.getItem(COMPARE_KEY),catalog);}catch{return [];}})(),compareQuery:'',compareStep:'all',insightBudget:null,shelfQuery:'',editingId:null,undoShelf:null,savedIds:(()=>{try{return normalizeSavedConcepts(localStorage.getItem(SAVED_CONCEPTS_KEY),catalog);}catch{return [];}})(),catalogQuery:'',catalogStep:'all',catalogDecision:'all',catalogSort:'recommended',savedOnly:false,affordableOnly:false,routineLog:(()=>{try{return localStorage.getItem(ROUTINE_LOG_KEY);}catch{return null;}})(),shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:savedLiveReport?.signals||null,scanSource:savedLiveReport?'live':null,savedLiveReport:!!savedLiveReport,cartIds:[],file:null,sourceFile:null,preview:null,imageReady:false,imageDimensions:null,canPrepare:false,preparing:false,photoPlan:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false,goalFromScan:null};
+function readUncertainSubmission(){
+ try{
+  const raw=sessionStorage.getItem(UNCERTAIN_SCAN_KEY);
+  const known=readUncertainMarker(raw);
+  if(raw&&!known)sessionStorage.removeItem(UNCERTAIN_SCAN_KEY);
+  return known;
+ }catch{return null;}
+}
+function saveUncertainSubmission(marker){
+ state.uncertainSubmission=marker;
+ try{
+  if(marker)sessionStorage.setItem(UNCERTAIN_SCAN_KEY,JSON.stringify(marker));
+  else sessionStorage.removeItem(UNCERTAIN_SCAN_KEY);
+  return true;
+ }catch{return false;}
+}
+const state={scanPhase:'idle',scanPoll:0,uncertainSubmission:readUncertainSubmission(),preferenceStudio:null,helpQuery:'',helpCategory:'all',productTour:null,photoSelfChecks:{},storyId:null,tab:parseWorkspaceHash(window.location.hash)||'overview',globalSearchQuery:'',compareIds:(()=>{try{return normalizeCompareIds(localStorage.getItem(COMPARE_KEY),catalog);}catch{return [];}})(),compareQuery:'',compareStep:'all',insightBudget:null,shelfQuery:'',editingId:null,undoShelf:null,savedIds:(()=>{try{return normalizeSavedConcepts(localStorage.getItem(SAVED_CONCEPTS_KEY),catalog);}catch{return [];}})(),catalogQuery:'',catalogStep:'all',catalogDecision:'all',catalogSort:'recommended',savedOnly:false,affordableOnly:false,routineLog:(()=>{try{return localStorage.getItem(ROUTINE_LOG_KEY);}catch{return null;}})(),shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:savedLiveReport?.signals||null,scanSource:savedLiveReport?'live':null,savedLiveReport:!!savedLiveReport,cartIds:[],file:null,sourceFile:null,preview:null,imageReady:false,imageDimensions:null,canPrepare:false,preparing:false,photoPlan:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false,goalFromScan:null};
 try{const saved=JSON.parse(localStorage.getItem('routinegap_state')||'null');if(saved&&typeof saved==='object'){
   state.shelf=normalizeShelf(saved.shelf);state.budget=Number.isFinite(saved.budget)?Math.max(0,Math.min(1000,saved.budget)):60;state.goal=goals.some(g=>g.id===saved.goal)?saved.goal:'moisture';state.fragranceFree=saved.fragranceFree===true;state.sampleInventory=saved.sampleInventory===true;
 }}catch{}
@@ -760,7 +777,7 @@ function renderHelp(){
  renderHelpResults();
 }
 function renderPrivacy(){
- const data=describeDataState({shelf:state.shelf,sampleInventory:state.sampleInventory,savedIds:state.savedIds,compareIds:state.compareIds,routineLog:state.routineLog,savedLiveReport:state.savedLiveReport,pending:state.pending,hasPhoto:!!state.file||!!state.preview,cartIds:state.cartIds});
+ const data=describeDataState({shelf:state.shelf,sampleInventory:state.sampleInventory,savedIds:state.savedIds,compareIds:state.compareIds,routineLog:state.routineLog,savedLiveReport:state.savedLiveReport,pending:state.pending,uncertainSubmission:state.uncertainSubmission,hasPhoto:!!state.file||!!state.preview,cartIds:state.cartIds});
  const presence=readStoragePresence(localStorage,sessionStorage);
  const rows=data.groups.map(group=>{
   const stored=presence.find(p=>p.id===group.id)||{};
@@ -1217,7 +1234,7 @@ document.addEventListener('click',event=>{
  if(event.target.closest('#cart-clear')){state.cartIds=[];renderShop(decide());notice('Demo cart emptied. No transaction was made.');return;}
  if(event.target.closest('#reset-catalog')||event.target.closest('#reset-empty-catalog')){state.catalogQuery='';state.catalogStep='all';state.catalogDecision='all';state.catalogSort='recommended';state.savedOnly=false;state.affordableOnly=false;renderShop(decide());return;}
  if(event.target.closest('#clear-routine')){state.routineLog=null;try{localStorage.removeItem(ROUTINE_LOG_KEY);}catch{}renderRoutine(decide());notice('Today’s checklist cleared on this device.');return;}
- if(event.target.closest('#save-live-report'))return saveLiveReportInTab();if(event.target.closest('#forget-live-report'))return forgetLiveReportInTab();if(event.target.closest('#guided-demo'))return startProductTour();if(event.target.closest('#demo-step-scan'))return setSample();if(event.target.closest('#export-decision'))return downloadDecisionBrief();if(event.target.closest('#prepare-photo'))return void prepareSelectedPhoto();if(event.target.closest('#sample-report'))return setSample();if(event.target.closest('#live-scan'))return void scanLive();if(event.target.closest('#resume-scan'))return void resumePendingScan();if(event.target.closest('#forget-scan')){if(state.busy)return;savePendingScan(null);renderScan();notice('Saved scan reference discarded. This does not cancel a task already running at Perfect Corp.');return;}if(event.target.closest('#reset-shelf')){if(!state.sampleInventory&&state.shelf.length&&!window.confirm('Replace your current shelf with fictional starter products? Your existing entries can be restored with Undo change on this page.'))return;snapshotShelf();state.shelf=sampleShelf.map(x=>({...x}));state.sampleInventory=true;state.shelfQuery='';finishShelfMutation(true);notice('Illustrative starter shelf loaded. This is not a record of your own products.');return;}
+ if(event.target.closest('#save-live-report'))return saveLiveReportInTab();if(event.target.closest('#forget-live-report'))return forgetLiveReportInTab();if(event.target.closest('#guided-demo'))return startProductTour();if(event.target.closest('#demo-step-scan'))return setSample();if(event.target.closest('#export-decision'))return downloadDecisionBrief();if(event.target.closest('#prepare-photo'))return void prepareSelectedPhoto();if(event.target.closest('#sample-report'))return setSample();if(event.target.closest('#live-scan'))return void scanLive();if(event.target.closest('#scan-uncertain-clear'))return clearUncertainSubmission();if(event.target.closest('#resume-scan'))return void resumePendingScan();if(event.target.closest('#forget-scan')){if(state.busy)return;savePendingScan(null);renderScan();notice('Saved scan reference discarded. This does not cancel a task already running at Perfect Corp.');return;}if(event.target.closest('#reset-shelf')){if(!state.sampleInventory&&state.shelf.length&&!window.confirm('Replace your current shelf with fictional starter products? Your existing entries can be restored with Undo change on this page.'))return;snapshotShelf();state.shelf=sampleShelf.map(x=>({...x}));state.sampleInventory=true;state.shelfQuery='';finishShelfMutation(true);notice('Illustrative starter shelf loaded. This is not a record of your own products.');return;}
  if(event.target.closest('#clear-shelf')){if(state.shelf.length&&!window.confirm('Clear all '+state.shelf.length+' products? You can immediately undo this change.'))return;snapshotShelf();state.shelf=[];state.sampleInventory=false;state.shelfQuery='';finishShelfMutation(true);notice('Shelf cleared. Use Undo change to restore your entries.');return;}
  const cart=event.target.closest('[data-cart]');if(cart){state.cartIds=state.cartIds.includes(cart.dataset.cart)?state.cartIds.filter(x=>x!==cart.dataset.cart):[...state.cartIds,cart.dataset.cart];renderShop(decide());return;}
  if(event.target.closest('#cart-auto')){state.cartIds=decide().cartIds;renderShop(decide());return;}
