@@ -79,3 +79,21 @@
 .report-export-action .secondary{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;max-width:100%}
 .report-export-action p{margin:0;line-height:1.65}
 @media(max-width:680px){.report-export-action .secondary{white-space:normal;text-align:left}}
+
+/* Judge-friendly opt-in tour; no provider calls or hidden data substitution. */
+.demo-journey{border:1px solid #cbdccf;border-radius:20px;background:#f4f8f1;margin:22px 0 28px;overflow:hidden}
+.demo-journey-lead{display:flex;align-items:center;justify-content:space-between;gap:25px;padding:25px 27px 20px}
+.demo-journey-lead h2{font-size:25px;line-height:1.2;letter-spacing:-.025em;color:#204c3b;margin:7px 0}
+.demo-journey-lead p{max-width:660px;color:#5b7163;font-size:13px;line-height:1.65;margin:0 0 16px}
+.demo-journey-lead .primary{width:auto}
+.demo-journey-mark{font-size:34px;color:#8cba98;white-space:nowrap;font-weight:800;letter-spacing:-.05em}
+.demo-journey-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid #d9e8dc}
+.demo-journey-steps button{appearance:none;border:0;border-right:1px solid #d9e8dc;background:#f9fcf7;text-align:left;padding:18px 16px;display:flex;flex-direction:column;gap:6px;color:#25543f;cursor:pointer}
+.demo-journey-steps button:last-child{border-right:0}
+.demo-journey-steps button:hover,.demo-journey-steps button:focus-visible{background:#e6f1e5;outline:2px solid #56936b;outline-offset:-2px}
+.demo-journey-steps button:disabled{opacity:.55;cursor:not-allowed}
+.demo-journey-steps b{font-size:12px;color:#619477}
+.demo-journey-steps strong{font-size:13px}
+.demo-journey-steps span{font-size:11px;line-height:1.5;color:#6b7b70}
+@media(max-width:900px){.demo-journey-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.demo-journey-steps button:nth-child(2){border-right:0}.demo-journey-steps button:nth-child(-n+2){border-bottom:1px solid #d9e8dc}}
+@media(max-width:540px){.demo-journey-lead{align-items:flex-start;padding:19px;flex-direction:column;gap:4px}.demo-journey-mark{font-size:17px}.demo-journey-steps{grid-template-columns:1fr}.demo-journey-steps button{border-right:0;border-bottom:1px solid #d9e8dc}.demo-journey-steps button:last-child{border-bottom:0}}
