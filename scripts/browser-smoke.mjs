@@ -6,6 +6,7 @@
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
+import {mkdir} from 'node:fs/promises';
 import {chromium} from 'playwright';
 
 const port=32765;
@@ -115,6 +116,28 @@ try{
  assert.equal(await desktop.locator('#budget').inputValue(),'75');
  assert.equal(await desktop.locator('#fragrance').isChecked(),true);
 
+ // Recovery Center: verify the receipt-free marker is visible, blocks resubmission
+ // and can be erased through the existing privacy group (no real provider calls).
+ await desktop.goto(base+'/#/scan',{waitUntil:'networkidle'});
+ await shown(desktop,'#view-scan:not(.hidden) .scan-journey');
+ assert.ok((await desktop.locator('.scan-journey').innerText()).includes('You are in control'));
+ await desktop.evaluate(()=>sessionStorage.setItem('routinegap_uncertain_scan_v1',JSON.stringify({kind:'submission-unknown',createdAt:Date.now()})));
+ await desktop.reload({waitUntil:'networkidle'});
+ await shown(desktop,'#scan-uncertain-clear');
+ assert.equal(await desktop.locator('#live-scan').isDisabled(),true);
+ assert.equal(await desktop.evaluate(()=>sessionStorage.getItem('routinegap_uncertain_scan_v1')!==null),true);
+ await desktop.locator('#navigation [data-tab="privacy"]').click();
+ await shown(desktop,'#view-privacy:not(.hidden) [data-privacy-erase="pending"]');
+ desktop.once('dialog',dialog=>dialog.accept());
+ await desktop.locator('[data-privacy-erase="pending"]').click();
+ await shown(desktop,'#view-privacy:not(.hidden)');
+ assert.equal(await desktop.evaluate(()=>sessionStorage.getItem('routinegap_uncertain_scan_v1')),null);
+ await desktop.goto(base+'/#/overview',{waitUntil:'networkidle'});
+ await mkdir('artifacts/browser',{recursive:true});
+ await desktop.screenshot({path:'artifacts/browser/desktop-overview.png',fullPage:true});
+ await desktop.goto(base+'/#/scan',{waitUntil:'networkidle'});
+ await desktop.screenshot({path:'artifacts/browser/desktop-scan-journey.png',fullPage:true});
+ 
  const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
  monitor(mobile);
  await mobile.goto(base+'/#/overview',{waitUntil:'networkidle'});
@@ -132,6 +155,8 @@ try{
  assert.equal(await mobile.locator('#mobile-more-overlay').isVisible(),false);
  await mobile.locator('#mobile-dock [data-mobile-tab="overview"]').click();
  await shown(mobile,'#view-overview:not(.hidden)');
+ await mobile.screenshot({path:'artifacts/browser/mobile-overview.png',fullPage:true});
+
  await mobile.locator('#launch-preference-studio').click();
  await shown(mobile,'#preference-overlay:not([hidden])');
  await mobile.locator('[data-pref-action="next"]').click();
@@ -142,7 +167,7 @@ try{
 
  assert.deepEqual(providerCalls,[],'Tour and Help must never submit a scan');
  assert.deepEqual(errors,[],'No client-side JavaScript exceptions are allowed');
- console.log('Chromium smoke passed: 10-section navigation, 33 FAQs, article search, demo scan, six-stop tour, global search, mobile dock, preference save/cancel and no paid API calls.');
+ console.log('Chromium smoke passed: 10-section navigation, 33 FAQs, article search, demo scan, six-stop tour, global search, mobile dock, preference save/cancel, scan recovery/erasure and no paid API calls.');
 }finally{
  if(browser)await browser.close();
  server.kill('SIGTERM');
