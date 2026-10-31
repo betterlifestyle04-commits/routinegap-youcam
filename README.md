@@ -16,6 +16,18 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## New: Self-service Help and Knowledge Center (10th workspace)
+
+RoutineGap now offers a first-class **Help Center** on `/#/help`, with an editorially organized, keyboard-accessible, responsive interface and **33 practical FAQs** spread across five topical categories: Getting started, Skin analysis, Shopping & routines, Privacy & data, and Troubleshooting. A top-bar Help button, sidebar destination, mobile More-menu entry, and global Ctrl/Cmd+K search index all take visitors to the center.
+
+- Search questions, common synonyms, and answer text entirely on-device; choose topic chips, expand native accessible `<details>` articles, or open matching articles from command search. Help searches do not become URL query strings or network requests.
+- Contextual next-step suggestions are based on existing *local UI state only*: a pending real task leads to **Resume**, an invalid image to photo readiness, starter sample inventory to My Shelf, unavailable provider authentication to sample mode, and other states to the Decision Trail.
+- Four prominent quick answers cover technical photo specifications, the distinction between illustrative sample and real provider data, the fictional catalog, and local erasure. Every answer has a route to a working workspace. Links to official Perfect Corp image specifications and existing Squoosh/Photopea editors are provided without inventing a customer-support email or provider-deletion endpoint.
+- The FAQ explains the actual prototype's limitations: 25 fictional concepts and example prices, no live checkout, account sync, automatic image-quality verification, paid scan without authorization, guaranteed skin outcomes, or provider-side data deletion.
+- No account, ticketing database, live support agent, external AI request, analytics tracker, hidden paid calls, cookies, or new stored personal fields were added.
+
+The Help Center is covered by dedicated tests for article validity, category totals, local search, contextual recovery priorities, privacy claims, global search navigation, and full desktop/mobile UI integration. The site contains **10 real workspaces**, reflected accurately throughout navigation and regression tests.
+
 ## New: interactive six-stop guided platform walkthrough
 
 RoutineGap includes a **genuine interactive product tour**, accessible from the Overview **Launch interactive tour** action or the global **Guided tour** button. The tour moves users through six real workspaces: Skin Analysis, My Shelf, Routine Planner, Shopping Studio, Compare Lab, and Decision Trail. A fixed nonmodal guide panel provides explanatory text, accurate disclosure notices, six-segment progress, Back, Continue, Finish and an always-visible Exit control. It supports responsive mobile layouts above the bottom dock, focused keyboard controls and Escape to close when focus is within the tour.
