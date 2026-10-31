@@ -16,6 +16,18 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## New: keyboard command search, private global discovery, and shareable workspace routes
+
+The platform now supports **Ctrl+K / Cmd+K** and the top-bar **Search** button. A designed accessible dialog finds all eight functional workspaces, all fictional catalog concepts, and—only when a real inventory is entered—actual browser-local shelf entries. It searches names, categories, tags and navigation aliases without asking a server for results. The first results are useful workspace quick links. Selecting a fictional concept opens the Shopping Studio with the exact idea visible; selecting a real owned item opens a filtered My Shelf view. Search results explicitly distinguish **user-entered products** from **fictional product concepts**.
+
+- **Browser back and forward work** for the eight page views. Workspace URLs can be shared safely as `/#/overview`, `/#/scan`, `/#/shelf`, `/#/routine`, `/#/insights`, `/#/shop`, `/#/compare`, and `/#/trail` without backend routing or extra infrastructure.
+- **Privacy boundary:** only a fixed, allowlisted page slug is put in the URL. Private shelf product names, search queries, scan findings, face photos and YouCam access references are **never** embedded in URL paths or fragments.
+- **Keyboard UX:** Escape closes the dialog, up/down keys move through results, Enter opens the first match, Tab remains within the dialog, focus returns to the launching control on close, and clicking the backdrop closes it. Keyboard skip-to-main remains supported.
+- Search and navigation are local and never consume YouCam credits, upload photos, produce a clinical interpretation or trigger a purchase.
+- Global search is a present-browser feature, not account synchronization or indexing of other users' activity.
+
+Deterministic tests cover route validation, all eight tab destinations, searches and aliases, purely fictional catalog labels, sample inventory exclusion, and the UI integration.
+
 ## New: Compare Lab — transparent side-by-side concept comparison
 
 The navigation now includes **Compare Lab**, a designed workspace where users can build a three-item side-by-side comparison of fictional skincare concepts.

@@ -100,7 +100,7 @@ test('new Compare Lab is actually linked, keyboard operable, and not a hidden pa
  for(const piece of ["function renderCompare()","function renderComparePicker()",'data-compare','aria-pressed','id="compare-search"','id="compare-step"','Compare concepts ('])assert.ok(js.includes(piece),piece);
  assert.ok(js.includes('state.sampleInventory'));
  assert.ok(js.includes("localStorage.setItem(COMPARE_KEY"));
- assert.ok(js.includes("['overview','scan','shelf','routine','insights','shop','compare','trail']"));
+ assert.ok(js.includes("WORKSPACE_PAGES.some(p=>p.id===tab)"),'navigation is validated against the centralized route list');
  assert.ok(css.includes('.compare-matrix')&&css.includes('.compare-table-scroll'));
  assert.ok(pkg.includes('node --check public/comparison.js'));
  assert.equal(js.includes("fetch('/api/checkout"),false);
