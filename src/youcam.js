@@ -1,5 +1,6 @@
 import { normalizeScanOutput } from './recommendations.js';
 import { imageDimensions,validSkinAnalysisDimensions,skinDimensionMessage } from './image-size.js';
+import {taskStatusResult} from './scan-status.js';
 const HOST='https://yce-api-01.makeupar.com';
 const TIMEOUT_MS=25000;
 export class YouCamError extends Error{constructor(message,status=502){super(message);this.name='YouCamError';this.status=status;}}
@@ -8,7 +9,15 @@ async function api(path,init={}){
   let response;
   try{response=await fetch(HOST+path,{...init,headers:{Authorization:`Bearer ${getKey()}`,'Content-Type':'application/json',...init.headers},signal:AbortSignal.timeout(TIMEOUT_MS)});}catch{throw new YouCamError('YouCam is temporarily unreachable.');}
   if(!response.ok){if(response.status===401||response.status===403)throw new YouCamError('YouCam authorization failed. Verify the API key and credits.',503);if(response.status===429)throw new YouCamError('YouCam rate limit reached. Try later.',429);throw new YouCamError('YouCam rejected the request. Please verify the input and provider account.',502);}
-  try{return await response.json()}catch{throw new YouCamError('Unexpected YouCam response.');}
+  let payload;
+  try{payload=await response.json();}catch{throw new YouCamError('Unexpected YouCam response.');}
+  // Provider errors may be expressed within a successful HTTP transport response.
+  if(typeof payload?.status==='number'&&payload.status>=400){
+    if(payload.status===401||payload.status===403)throw new YouCamError('YouCam authorization failed. Verify the API key and credits.',503);
+    if(payload.status===429)throw new YouCamError('YouCam rate limit reached. Try later.',429);
+    throw new YouCamError('YouCam returned a task or input error. Please check the photo and provider account.',502);
+  }
+  return payload;
 }
 /**
  * Zero-credit authentication preflight via Perfect Corp's documented credit endpoint.
@@ -72,11 +81,12 @@ export async function startYouCamScan({bytes,mime,fileName}){
 export async function getYouCamScan(taskId){
   if(typeof taskId!=='string'||!/^[-_A-Za-z0-9+/=]{10,220}$/.test(taskId))throw new YouCamError('Invalid task identifier.',400);
   const payload=await api('/s2s/v2.0/task/skin-analysis/'+encodeURIComponent(taskId));
-  const status=payload?.data?.task_status;
-  if(status==='success'){
+  let result;
+  try{result=taskStatusResult(payload);}
+  catch{throw new YouCamError('YouCam returned an unexpected task state. Keep this scan receipt and resume the existing task later; do not pay for another upload.',502);}
+  if(result.state==='success'){
     try{return {state:'success',signals:normalizeScanOutput(payload)};}
     catch{throw new YouCamError('YouCam completed the scan, but its result format did not contain supported cosmetic observations. Please contact the project owner before retrying.',502);}
   }
-  if(status==='error')return {state:'error',message:'YouCam could not analyze this image. Try a clear, front-facing photo.'};
-  return {state:'running'};
+  return result;
 }

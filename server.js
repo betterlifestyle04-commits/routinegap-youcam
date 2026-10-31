@@ -42,11 +42,12 @@ const server=createServer(async(req,res)=>{
     if(req.method==='POST'&&url.pathname==='/api/scan'){
       // A configured but rejected key must never start a paid scan or use a user's photo.
       if(providerConnection!=='authenticated')return send(res,503,{error:'YouCam API authentication has not succeeded. Replace the key in Render and verify provider status before retrying.'});
-      if(!rateLimit(req))return send(res,429,{error:'Demo scan budget reached (max two per hour per connection; twenty per day total).'});
       const contentType=(req.headers['content-type']||'').split(';')[0];
       if(!['image/jpeg','image/png'].includes(contentType))return send(res,415,{error:'Upload a JPG or PNG photo.'});
       if(req.headers['x-skin-consent']!=='yes')return send(res,400,{error:'Explicit YouCam photo-sharing consent is required.'});
       const bytes=await readBytes(req,MAX_BYTES);
+      // Invalid formats or missing consent cannot consume scan quota; limit only explicit, valid upload attempts.
+      if(!rateLimit(req))return send(res,429,{error:'Demo scan budget reached (max two per hour per connection; twenty per day total).'});
       const task=await startYouCamScan({bytes,mime:contentType,fileName:req.headers['x-image-filename']||'selfie.jpg'});
       const receipt=issueTaskReceipt(task.taskId,process.env.DEMO_ACCESS_TOKEN);
       return send(res,200,{state:'running',receipt,expiresInHours:24});
@@ -69,17 +70,21 @@ const server=createServer(async(req,res)=>{
   }catch(e){const safe=e instanceof YouCamError||e instanceof TaskReceiptError;send(res,safe?e.status:500,{error:safe?e.message:'The request failed. Please try again.'});}
 });
 const port=Number(process.env.PORT||3000);
+export async function refreshProviderConnection(){
+  if(!ready()){providerConnection='disabled';return providerConnection;}
+  providerConnection='checking';
+  try{
+    await verifyYouCamAccess();
+    providerConnection='authenticated';
+    if(process.env.NODE_ENV!=='test')console.info('YouCam key preflight: authenticated by free credit-balance endpoint; no analysis task created.');
+  }catch(error){
+    providerConnection='failed';
+    if(process.env.NODE_ENV!=='test')console.warn('YouCam key preflight failed:',error instanceof YouCamError?error.message:'Unexpected provider error.');
+  }
+  return providerConnection;
+}
 if(process.env.NODE_ENV!=='test')server.listen(port,'0.0.0.0',()=>{
   process.stdout.write(`RoutineGap running at http://localhost:${port}\n`);
-  if(ready()){
-    providerConnection='checking';
-    void verifyYouCamAccess().then(()=>{
-      providerConnection='authenticated';
-      console.info('YouCam key preflight: authenticated by free credit-balance endpoint; no analysis task created.');
-    }).catch(error=>{
-      providerConnection='failed';
-      console.warn('YouCam key preflight failed:',error instanceof YouCamError?error.message:'Unexpected provider error.');
-    });
-  }else{providerConnection='disabled';}
+  void refreshProviderConnection();
 });
 export {server};
