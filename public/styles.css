@@ -105,3 +105,54 @@
 .private-report-save .panel-actions{margin-top:10px;gap:12px}
 .private-report-save .label-pill{align-self:center}
 @media(max-width:620px){.private-report-save{padding:14px 12px}.private-report-save .panel-actions{flex-wrap:wrap}}
+
+
+/* Everyday Routine Planner: editorial workspace, local-only honest completion. */
+.routine-overview-callout{margin:22px 0 12px;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:25px 29px;border-radius:20px;border:1px solid #d9e7d5;background:linear-gradient(110deg,#f0f7e8,#f8faef 68%,#e8f1db)}
+.routine-overview-callout h2{font:normal 27px/1.18 Georgia,serif;letter-spacing:-.6px;color:#2b543e;margin:9px 0}
+.routine-overview-callout p{max-width:660px;margin:0;color:#607568;line-height:1.65;font-size:13px}
+.routine-overview-callout .primary{white-space:nowrap;background:#285440}
+.routine-banner{min-height:224px;display:flex;align-items:center;justify-content:space-between;gap:28px;padding:32px 36px;margin-bottom:20px;position:relative;overflow:hidden;border-radius:23px;color:#fff;background:radial-gradient(circle at 85% 10%,#638c66 0%,transparent 27%),linear-gradient(110deg,#203f35,#315943)}
+.routine-banner::after{content:"";position:absolute;width:280px;height:280px;right:-62px;bottom:-200px;border:1px solid #e8f3b999;border-radius:50%;pointer-events:none}
+.routine-banner .eyebrow{color:#d9e8a8}
+.routine-banner h2{font:normal clamp(28px,3vw,43px)/1.12 Georgia,serif;letter-spacing:-.8px;margin:12px 0}
+.routine-banner p{color:#e0e9df;font-size:13px;line-height:1.6}
+.routine-progress{flex-shrink:0;min-width:187px;padding:20px;background:#ffffff18;border:1px solid #ffffff30;border-radius:18px;display:flex;flex-direction:column;gap:6px;z-index:1}
+.routine-progress strong{font:normal 40px/1 Georgia,serif;color:#e1edb5}
+.routine-progress span{font-size:12px;font-weight:700;color:#fff}
+.routine-progress small{font-size:11px;color:#d4e0d2}
+.routine-warning{border:1px solid #f0dec5;background:#fffaf1;padding:19px 23px;margin-bottom:19px;border-radius:16px}
+.routine-warning strong{color:#765332}.routine-warning p{font-size:13px;color:#826c52;line-height:1.6;max-width:760px}
+.routine-summary-strip{display:flex;gap:0;margin-bottom:20px;background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.routine-summary-strip span{padding:17px 24px;flex:1;border-right:1px solid var(--border);color:#68786d;font-size:12px}
+.routine-summary-strip span:last-child{border-right:0}
+.routine-summary-strip b{font:normal 23px Georgia,serif;color:#274e3e;margin-right:7px}
+.routine-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:19px}
+.routine-period{background:#fff;border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:var(--shadow)}
+.routine-period-head{display:flex;align-items:center;gap:16px;padding:25px;border-bottom:1px solid var(--border);background:linear-gradient(130deg,#f7faef,#fff)}
+.routine-period-head h3{font:normal 27px Georgia,serif;margin:6px 0;color:#284c3d}
+.routine-period-head p{margin:0;font-size:12px;color:#738477}
+.routine-period-symbol{display:grid;place-items:center;flex-shrink:0;width:57px;height:57px;border-radius:17px;background:#e7edc3;color:#587747;font-size:30px}
+.routine-period-symbol.evening{background:#e4ebe9;color:#325f5b}
+.routine-step{display:flex;align-items:center;gap:13px;min-height:117px;padding:19px 21px;border-bottom:1px solid var(--border);transition:background .2s}
+.routine-step:last-child{border-bottom:0}
+.routine-step.is-done{background:#f2f9ee}.routine-step.is-missing{background:#fffcf8}
+.routine-step-index{align-self:flex-start;display:grid;place-items:center;flex-shrink:0;width:33px;height:33px;border:1px solid #d9e5d7;border-radius:50%;font-size:11px;font-weight:800;color:#78927d}
+.routine-step-content{flex:1;min-width:0}.routine-step-content strong{font-size:14px;color:#304d3d;margin-right:8px}
+.routine-step-content .label-pill{display:inline-block;font-size:9px;vertical-align:middle}
+.routine-step-product{color:#304b3f;font-size:13px;font-weight:650;margin:11px 0 4px;overflow-wrap:anywhere}
+.routine-step-content .small{line-height:1.6;margin:0}
+.routine-step-check{flex-shrink:0;display:flex;align-items:center;gap:7px;padding:8px 9px;border:1px solid #d7e4d7;border-radius:10px;color:#355d45;font-size:11px;font-weight:750;cursor:pointer;background:#f8fbf6}
+.routine-step-check:has(input:checked){background:#ddebda;border-color:#aad3af}
+.routine-step-check:has(input:disabled){opacity:.5;cursor:not-allowed}
+.routine-step-check input{width:17px;height:17px;accent-color:#386b4f;cursor:inherit}
+.routine-step:focus-within{outline:2px solid #80a990;outline-offset:-3px}
+.routine-bottom-panel{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-top:20px;padding:23px 27px;border:1px solid #dce8db;border-radius:18px;background:#f6faf4}
+.routine-bottom-panel h3{margin:0 0 8px;font-size:18px;color:#2c5240}
+.routine-bottom-panel p{max-width:730px;line-height:1.7;margin:0}
+.routine-bottom-actions{display:flex;flex-direction:column;align-items:stretch;gap:9px;min-width:204px}
+.routine-bottom-actions button{white-space:normal;text-align:center}
+@media(max-width:1050px){.routine-columns{grid-template-columns:1fr}.routine-progress{min-width:155px}}
+@media(max-width:760px){.routine-overview-callout,.routine-banner,.routine-bottom-panel{flex-direction:column;align-items:stretch}.routine-overview-callout{padding:20px}.routine-overview-callout .primary{white-space:normal}.routine-banner{padding:25px;min-height:0}.routine-progress{width:100%}.routine-summary-strip{flex-direction:column}.routine-summary-strip span{border-right:0;border-bottom:1px solid var(--border);padding:12px 18px}.routine-summary-strip span:last-child{border-bottom:0}.routine-bottom-actions{min-width:0}}
+@media(max-width:460px){.routine-step{padding:16px 12px;gap:8px}.routine-step-index{width:26px;height:26px}.routine-step-check{padding:7px 5px;flex-direction:column}.routine-step-content .label-pill{margin-top:6px}.routine-period-head{padding:18px}}
+@media(prefers-reduced-motion:reduce){.routine-step{transition:none}}
