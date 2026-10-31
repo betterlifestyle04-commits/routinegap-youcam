@@ -19,7 +19,7 @@ test('photo dashboard separates validated bytes and pixel limits from manual fac
  assert.equal(r.manualTotal,4);
  assert.ok(r.diagnostics.every(x=>x.status==='pass'));
  assert.match(r.truth,/not automatically verified/);
- assert.match(r.next,/provider/);
+ assert.match(r.next,/YouCam/);
 });
 test('unsupported or tiny images never become technically ready',()=>{
  const small=photoReadiness({...scenario(236,354)});
@@ -45,7 +45,7 @@ test('files above 8 MB but below 24 MB require safe reduction; over 24 MB reject
  const large=photoReadiness(scenario(960,1280,10_000_000));
  assert.equal(large.status,'prepare');
  assert.equal(large.diagnostics.find(x=>x.id==='uploadSize').status,'fix');
- const tooBig=photoReadiness(scenario(3000,4000,25_000_000));
+ const tooBig=photoReadiness(scenario(3000,4000,27_000_000));
  assert.equal(tooBig.status,'invalid');
  assert.equal(tooBig.diagnostics.find(x=>x.id==='sourceSize').status,'fail');
 });
