@@ -16,6 +16,20 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## New: Concept Detail Studio — product detail storytelling across 25 examples
+
+RoutineGap now offers immersive, responsive **full product-detail views** in Shopping Studio. Select **Explore full details** on any of the 25 fictional cards, use Global Search to open a concept directly, or explore alternatives within the detail dialog. A large CSS-only packaging illustration is deliberately a *concept*, not a photo of actual merchandise.
+
+The detail view includes the source concept name, descriptive catalog copy, fictional USD example price, clearly labeled decision reasoning, existing real-shelf category overlap, currently selected example budget, optional catalog tags for stated focus and fragrance-free preference, and three same-step illustrative alternatives.
+
+**Editorial data:** Four educational routine-category guides (cleanser, moisturizer, SPF, optional serum) and **11 explanatory descriptor definitions** for every catalog tag. They explain what each marketing label means *in the fictional concept library*, and explicitly distinguish the labels from verified ingredients, tolerability, certified SPF performance, actual merchant stock, medical outcomes or clinical compatibility.
+
+**Full user journey:** From any detail view, save or unsave an idea, add/remove an eligible fictional cart selection, and add/remove comparison shortlist entries. The existing allowlisted storage remains unchanged in structure; the detail view never stores photos, scan findings, provider receipts or account credentials. Shelf-overlap warnings explicitly use *genuine user-owned entries only*; illustrative starter inventory never counts as real ownership.
+
+The dialog has keyboard-accessible close, Escape, focus trap, backdrop dismissal, focus return and responsive layouts. Opening an example through Global Search enters Shopping Studio and opens the detail dialog. Navigating away closes the dialog. All actions still remain examples, with **no checkout, merchants, live pricing, ratings or additional YouCam calls**.
+
+Regressions test all 25 concept stories, descriptor coverage, false ownership prevention, budget limits, tags and disclaimers, safe related-product ordering, immutability and integration hooks. The GitHub workflows must pass before release.
+
 ## New: Privacy & Data Center with scoped controls
 
 **Privacy & Data** is a first-class ninth workspace, available in navigation, global search, and at `/#/privacy`. A visually structured dashboard inventories only six known RoutineGap browser storage groups, displays whether each actually exists in the browser, and provides deletion and export controls.
