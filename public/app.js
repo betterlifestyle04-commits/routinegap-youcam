@@ -176,7 +176,7 @@ function renderShop(d){
   };
   $('#view-shop').innerHTML=`${title('DISCOVER & DECIDE','The shopping studio','Explore an expanded concept catalog, see what your shelf already covers, and compare possibilities without pressure to purchase. All products and prices are fictional examples, not merchant offers.')}
   <div class="scan-shop-bridge">
-    <div><span class="eyebrow">COSMETIC OBSERVATIONS → YOUR CHOICE</span><h3>Thoughtful discovery, without guesswork</h3>
+    <div><span class="eyebrow">EVIDENCE → YOUR CHOICE</span><h3>Thoughtful discovery, without guesswork</h3>
     <p class="muted small">${state.scanSource==='live'?'A real YouCam cosmetic observation is available.':state.scanSource==='sample'?'The skin report is explicitly illustrative, not YouCam evidence.':'No scan is needed to explore the catalog.'}
     ${state.goalFromScan?'You selected '+escape(goals.find(g=>g.id===state.goal)?.name||'a focus')+' yourself after reviewing the '+(state.goalFromScan==='live'?'real scan.':'illustrative report.'):'We match your own budget, routine steps and stated preference, not diagnostic or predictive scores.'}</p></div>
     <button class="tiny-btn" data-go="scan">Review skin observations ↗</button>
