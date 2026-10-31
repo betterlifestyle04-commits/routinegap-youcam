@@ -65,3 +65,11 @@
 .scan-shop-bridge p{max-width:850px;line-height:1.65;margin:0}
 .scan-shop-bridge .tiny-btn{white-space:nowrap}
 @media(max-width:760px){.scan-shop-bridge{flex-direction:column;align-items:stretch}.scan-shop-bridge .tiny-btn{align-self:flex-start;white-space:normal}}
+
+/* Local-only photo resizing: an accessible next step for good but oversized originals. */
+.local-prep-action{display:flex;flex-direction:column;align-items:center;gap:9px;margin:14px auto 2px;padding:16px 20px;border:1px solid #bdd7c4;border-radius:14px;background:#e9f3e8;max-width:580px}
+.local-prep-action .secondary{max-width:100%;font-weight:750}
+.local-prep-action .secondary:focus-visible{outline:3px solid #7aa78a;outline-offset:3px}
+.local-prep-action p{line-height:1.6;margin:0;max-width:480px;color:#486556;font-size:12px}
+.local-prep-action button[disabled]{opacity:.68;cursor:wait}
+@media(max-width:650px){.local-prep-action{padding:13px 11px}}
