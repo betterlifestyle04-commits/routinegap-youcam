@@ -498,3 +498,63 @@ body.is-command-open{overflow:hidden}
 @media(max-width:760px){.workspace-search-opener{padding:7px 9px}.workspace-search-opener>span:nth-child(2){font-size:11px}.top-actions{gap:7px}.command-overlay{padding:24px 12px}.command-dialog{max-height:calc(100dvh - 50px)}.command-result-type{font-size:8px}.command-search-box{padding:15px 14px}.command-search-box input{font-size:14px}.command-body{padding:16px 13px}.command-footer{gap:8px;padding:10px 15px}.command-footer>span:last-child{width:100%;margin-left:0}}
 @media(max-width:450px){.workspace-search-opener>span:nth-child(2){display:none}.workspace-search-opener>span:first-child{font-size:22px}.command-result{gap:9px;padding:9px 8px}.command-result-type{display:none}.command-body h2{font-size:20px}}
 @media(prefers-reduced-motion:reduce){.command-dialog{animation:none}}
+
+
+/* Privacy & Data — first-class trust experience, scoped deletion, local-only export. */
+.privacy-overview-bridge{margin:19px 0;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:23px 25px;background:#edf5ec;border:1px solid #d7e6d5;border-radius:18px}
+.privacy-overview-bridge h2{font:normal 25px Georgia,serif;color:#31573e;margin:8px 0}
+.privacy-overview-bridge p{font-size:12px;line-height:1.6;color:#718974;margin:0;max-width:650px}
+.privacy-overview-bridge button{flex-shrink:0}
+.privacy-hero{position:relative;overflow:hidden;background:linear-gradient(115deg,#214936,#315b48 65%,#7a9773);border-radius:25px;min-height:254px;padding:35px 39px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:32px}
+.privacy-hero>div{position:relative;z-index:1;max-width:710px}
+.privacy-hero .eyebrow{color:#c4dfa8}
+.privacy-hero h2{font:normal clamp(29px,3.2vw,43px)/1.17 Georgia,serif;letter-spacing:-1px;margin:11px 0 14px}
+.privacy-hero h2 em{font-style:normal;color:#e2eda9}
+.privacy-hero p{line-height:1.7;font-size:13px;color:#d7e8da}
+.privacy-hero-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:23px}
+.privacy-hero .primary{color:#264c37;background:#e1ecae;border:1px solid #e1ecae}
+.privacy-hero .ghost{background:#ffffff13;color:#f5faf2;border-color:#ffffff55}
+.privacy-hero-icon{font-size:113px;line-height:1;width:180px;height:180px;display:grid;place-items:center;color:#dce9b4;flex-shrink:0;border:1px solid #ffffff33;border-radius:50%;box-shadow:0 0 0 30px #ffffff08,0 0 0 65px #ffffff05}
+.privacy-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0 22px}
+.privacy-stats>div{background:#fff;border:1px solid #e0e9db;box-shadow:var(--shadow);border-radius:16px;padding:19px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.privacy-stats span{font-size:11px;color:#758f7b}
+.privacy-stats strong{font:normal 30px Georgia,serif;color:#2b543c}
+.privacy-stats small{font-size:10px;line-height:1.5;color:#90a293}
+.privacy-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(245px,.75fr);align-items:start;gap:18px}
+.privacy-main-panel{min-width:0;padding:27px}
+.privacy-main-panel h2{font:normal 30px Georgia,serif;letter-spacing:-.55px;color:#2a543b;margin:10px 0}
+.privacy-main-panel>.small{line-height:1.7;margin:0 0 20px}
+.privacy-rows{border:1px solid #e1eade;border-radius:14px;overflow:hidden}
+.privacy-row{display:flex;align-items:center;gap:12px;padding:16px 14px;border-bottom:1px solid #e7ede3;background:#fff}
+.privacy-row:last-child{border-bottom:0}
+.privacy-row-symbol{background:#ebf4e8;color:#577e5b;border-radius:12px;width:41px;height:43px;flex-shrink:0;display:grid;place-items:center;font-size:24px}
+.privacy-row-content{min-width:0;flex:1}
+.privacy-row-head{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap}
+.privacy-row-head strong{font-size:12px;color:#2f583f}
+.privacy-data-status{padding:5px 8px;border-radius:6px;background:#f2f4ef;color:#859487;font-size:9px;letter-spacing:.03em;font-weight:800}
+.privacy-data-status.stored{background:#e7f3e3;color:#598363}
+.privacy-row-content p{margin:7px 0 5px;font-size:11px;line-height:1.6;color:#7a8d7d}
+.privacy-row-content small{color:#92a295;font-size:10px;line-height:1.5;display:block}
+.privacy-row>.tiny-btn{font-size:11px;flex-shrink:0;background:#fff7f3;color:#a67565;border-color:#eeddd7}
+.privacy-row>.tiny-btn:not(:disabled):hover{background:#fae8de;border-color:#dba28c}
+.privacy-danger-area{margin-top:20px;border-top:1px solid #e7eee4;padding-top:21px;display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.privacy-danger-area p{margin:0;max-width:470px;color:#839185;line-height:1.7;font-size:11px}
+.privacy-danger-button{appearance:none;border:1px solid #e6c8bf;border-radius:10px;background:#fff2ee;color:#a34b3f;font-weight:800;padding:11px 13px;font-size:11px;max-width:220px;line-height:1.5;flex-shrink:0}
+.privacy-danger-button:hover,.privacy-danger-button:focus-visible{background:#f9e5de;outline:2px solid #ca897b;outline-offset:2px}
+.privacy-side{display:flex;flex-direction:column;gap:18px;min-width:0}
+.privacy-card{padding:23px;background:#f7faf5;border:1px solid #dce9da;border-radius:18px;display:flex;flex-direction:column;gap:9px}
+.privacy-card h3{font:normal 24px Georgia,serif;color:#2d5540;letter-spacing:-.5px;line-height:1.2;margin:9px 0 4px}
+.privacy-card p{font-size:12px;line-height:1.7;color:#738777;margin:0 0 10px}
+.privacy-card button{white-space:normal;font-size:12px;line-height:1.5;width:100%;margin-top:7px}
+.privacy-export{background:linear-gradient(140deg,#ecf5e9,#fbfdf7);border-color:#cfe4cd}
+.privacy-flow{display:flex;flex-direction:column;gap:17px;margin-top:14px;padding-left:15px;border-left:2px solid #d6e7d5}
+.privacy-flow>div{position:relative}.privacy-flow>div::before{content:'';position:absolute;left:-22px;top:3px;width:10px;height:10px;border-radius:50%;background:#91b99b;border:2px solid #f7faf5}
+.privacy-flow b{font-size:11px;color:#3c674d}.privacy-flow p{margin:7px 0 0;font-size:11px;line-height:1.65}
+.privacy-reminder{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:19px;padding:23px 27px;background:#fff8f1;border:1px solid #eadfd2;border-radius:17px}
+.privacy-reminder h2{font:normal 23px Georgia,serif;color:#685444;margin:9px 0}
+.privacy-reminder p{font-size:12px;line-height:1.7;color:#927e70;margin:0;max-width:900px}
+.privacy-reminder button{flex-shrink:0}
+@media(max-width:1250px){.privacy-layout{grid-template-columns:1fr}.privacy-side{display:grid;grid-template-columns:1fr 1fr}.privacy-danger-area{align-items:center}}
+@media(max-width:810px){.privacy-hero{padding:26px}.privacy-hero-icon{font-size:65px;width:110px;height:110px}.privacy-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.privacy-overview-bridge,.privacy-reminder{flex-direction:column;align-items:stretch}.privacy-side{grid-template-columns:1fr 1fr}}
+@media(max-width:580px){.privacy-hero{flex-direction:column;align-items:stretch;padding:24px 20px}.privacy-hero-icon{display:none}.privacy-side{grid-template-columns:1fr}.privacy-main-panel{padding:19px 14px}.privacy-row{flex-wrap:wrap;padding:13px 10px}.privacy-row-content{flex:1 1 calc(100% - 65px)}.privacy-row>.tiny-btn{margin-left:auto}.privacy-danger-area{flex-direction:column;align-items:stretch}.privacy-danger-button{max-width:none}.privacy-stats{gap:9px}.privacy-stats>div{padding:14px}.privacy-stats strong{font-size:25px}.privacy-reminder{padding:19px}}
+@media(prefers-reduced-motion:reduce){.privacy-danger-button{transition:none}}
