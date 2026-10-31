@@ -11,6 +11,7 @@ import {buildLaunchpad,mobileSelection,MOBILE_TABS,MOBILE_MORE_TABS} from '/laun
 import {TOUR_STEPS,tourSummary,moveTour} from '/product-tour.js';
 import {HELP_ARTICLES,HELP_CATEGORIES,filterHelp,helpCategoryCounts,contextualHelp,validHelpTab} from '/help-center.js';
 import {PREF_STAGES,DEMO_BUDGETS,normalizePreferenceDraft,modifyPreferenceDraft,preferencePreview,stepPreferenceStage,differentPreferences} from '/preference-studio.js';
+import {UNCERTAIN_SCAN_KEY,newUncertainMarker,readUncertainMarker,classifyStartResponse,scanJourney} from '/scan-journey.js';
 import {planLocalPhoto,preparePhotoLocally,PHOTO_SOURCE_MAX_BYTES} from '/photo-tools.js';
 import {SELF_CHECKS,toggleSelfCheck,photoReadiness} from '/photo-readiness.js';
 import {createDecisionBrief} from '/report-export.js';
@@ -41,9 +42,30 @@ function readPendingScan(){
 function savePendingScan(pending){
   state.pending=pending;
   try{if(pending)sessionStorage.setItem(PENDING_SCAN_KEY,JSON.stringify(pending));
-      else sessionStorage.removeItem(PENDING_SCAN_KEY);}catch{}
+      else sessionStorage.removeItem(PENDING_SCAN_KEY);return true;}catch{return false;}
 }
-const state={preferenceStudio:null,helpQuery:'',helpCategory:'all',productTour:null,photoSelfChecks:{},storyId:null,tab:parseWorkspaceHash(window.location.hash)||'overview',globalSearchQuery:'',compareIds:(()=>{try{return normalizeCompareIds(localStorage.getItem(COMPARE_KEY),catalog);}catch{return [];}})(),compareQuery:'',compareStep:'all',insightBudget:null,shelfQuery:'',editingId:null,undoShelf:null,savedIds:(()=>{try{return normalizeSavedConcepts(localStorage.getItem(SAVED_CONCEPTS_KEY),catalog);}catch{return [];}})(),catalogQuery:'',catalogStep:'all',catalogDecision:'all',catalogSort:'recommended',savedOnly:false,affordableOnly:false,routineLog:(()=>{try{return localStorage.getItem(ROUTINE_LOG_KEY);}catch{return null;}})(),shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:savedLiveReport?.signals||null,scanSource:savedLiveReport?'live':null,savedLiveReport:!!savedLiveReport,cartIds:[],file:null,sourceFile:null,preview:null,imageReady:false,imageDimensions:null,canPrepare:false,preparing:false,photoPlan:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false,goalFromScan:null};
+function readUncertainSubmission(){
+ try{
+  const raw=sessionStorage.getItem(UNCERTAIN_SCAN_KEY);
+  const known=readUncertainMarker(raw);
+  if(raw&&!known)sessionStorage.removeItem(UNCERTAIN_SCAN_KEY);
+  return known;
+ }catch{return null;}
+}
+function saveUncertainSubmission(marker){
+ try{
+  if(marker)sessionStorage.setItem(UNCERTAIN_SCAN_KEY,JSON.stringify(marker));
+  else sessionStorage.removeItem(UNCERTAIN_SCAN_KEY);
+  state.uncertainSubmission=marker;
+  return true;
+ }catch{
+  // Failure to persist a new warning must still block retry in this open tab.
+  // Failure to ERASE must never silently unblock another chargeable upload.
+  if(marker)state.uncertainSubmission=marker;
+  return false;
+ }
+}
+const state={scanPhase:'idle',scanPoll:0,uncertainSubmission:readUncertainSubmission(),preferenceStudio:null,helpQuery:'',helpCategory:'all',productTour:null,photoSelfChecks:{},storyId:null,tab:parseWorkspaceHash(window.location.hash)||'overview',globalSearchQuery:'',compareIds:(()=>{try{return normalizeCompareIds(localStorage.getItem(COMPARE_KEY),catalog);}catch{return [];}})(),compareQuery:'',compareStep:'all',insightBudget:null,shelfQuery:'',editingId:null,undoShelf:null,savedIds:(()=>{try{return normalizeSavedConcepts(localStorage.getItem(SAVED_CONCEPTS_KEY),catalog);}catch{return [];}})(),catalogQuery:'',catalogStep:'all',catalogDecision:'all',catalogSort:'recommended',savedOnly:false,affordableOnly:false,routineLog:(()=>{try{return localStorage.getItem(ROUTINE_LOG_KEY);}catch{return null;}})(),shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:savedLiveReport?.signals||null,scanSource:savedLiveReport?'live':null,savedLiveReport:!!savedLiveReport,cartIds:[],file:null,sourceFile:null,preview:null,imageReady:false,imageDimensions:null,canPrepare:false,preparing:false,photoPlan:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false,goalFromScan:null};
 try{const saved=JSON.parse(localStorage.getItem('routinegap_state')||'null');if(saved&&typeof saved==='object'){
   state.shelf=normalizeShelf(saved.shelf);state.budget=Number.isFinite(saved.budget)?Math.max(0,Math.min(1000,saved.budget)):60;state.goal=goals.some(g=>g.id===saved.goal)?saved.goal:'moisture';state.fragranceFree=saved.fragranceFree===true;state.sampleInventory=saved.sampleInventory===true;
 }}catch{}
@@ -333,10 +355,39 @@ function renderPhotoReadiness(){
  <div class="readiness-checkboxes">${confirmed}</div><p class="readiness-manual-caption">Optional self-checks. RoutineGap cannot determine actual lighting, blur, skin visibility, filters or provider acceptance from file dimensions.</p></section></div>
  <p class="readiness-truth"><span aria-hidden="true">ⓘ</span> ${escape(check.truth)}</p>`;
 }
+function renderScanJourney(){
+ const journey=scanJourney({hasPhoto:!!state.sourceFile,imageReady:state.imageReady,consent:state.consent,
+  passcode:!!state.code,authenticated:state.liveEnabled,pending:!!state.pending,
+  uncertain:!!state.uncertainSubmission,busy:state.busy,phase:state.scanPhase,poll:state.scanPoll,
+  scanSource:state.scanSource,hasReport:Array.isArray(state.scan)&&state.scan.length>0});
+ const cards=journey.steps.map((step,i)=>`<div class="scan-journey-stage ${step.status}" role="listitem">
+  <span class="scan-journey-stage-id" aria-hidden="true">${step.status==='done'?'✓':String(i+1).padStart(2,'0')}</span>
+  <div><strong>${escape(step.name)}</strong><small>${escape(step.status==='done'?'Documented locally':step.status==='uncertain'?'Unconfirmed':step.status==='active'?'In progress':'Not confirmed')}</small></div>
+ </div>`).join('');
+ return `<section class="scan-journey ${journey.tone}" aria-label="Skin scan journey and recovery status">
+  <div class="scan-journey-heading"><div><span class="eyebrow">LIVE SCAN JOURNEY · HONEST STATUS</span>
+    <h2>${escape(journey.title)}</h2><p>${escape(journey.subtitle)}</p></div>
+    <span class="scan-journey-chip ${journey.tone}">${escape(journey.label)}</span></div>
+  <div class="scan-journey-stages" role="list" aria-label="Scan journey stages">${cards}</div>
+  ${journey.blockedByUncertainty?`<div class="scan-uncertainty-banner" role="alert"><div><strong>Important: no provider receipt was received</strong>
+    <p>This warning does not mean the paid task failed or was canceled. Ask the project owner to verify provider activity before attempting another submission. The warning persists in this tab for up to 24 hours, without storing a face photo, filename, credentials, or task ID.</p></div>
+    <button type="button" class="secondary" id="scan-uncertain-clear" ${state.busy?'disabled':''}>I've checked with the owner · reset warning</button></div>`:''}
+  <p class="scan-journey-truth">${escape(journey.truth)}</p>
+ </section>`;
+}
+function clearUncertainSubmission(){
+ if(!state.uncertainSubmission||state.busy)return;
+ const ok=window.confirm('Important: there may be an existing paid YouCam task without a receipt. Resetting this local warning DOES NOT cancel the provider request and may allow another paid submission. Only continue after the project owner confirms it is appropriate. Reset the warning?');
+ if(!ok)return;
+ if(!saveUncertainSubmission(null))return notice('Could not erase the uncertainty marker in this browser. Check Privacy & Data before retrying.',true);
+ state.scanPhase='idle';renderScan();
+ notice('Local submission warning reset at your request. This did not cancel or verify any provider task. Confirm with the project owner before a new paid scan.');
+}
 function renderScan(){const reports=state.scan||[];$('#view-scan').innerHTML=`${title('SKIN SIGNALS','The skin intelligence studio','Begin with a clear front-facing selfie for live Perfect Corp YouCam Skin Analysis, or explore an unmistakably illustrative sample. Cosmetic signals are not medical diagnoses.')}
+${renderScanJourney()}
 <div class="two-col"><div class="panel"><div class="eyebrow">STEP 01 • YOUR IMAGE</div><h3 style="margin-top:9px">Start a skin-aware session</h3><div class="scan-input photo-drop-zone" id="upload-area" aria-label="Select or drop a JPG or PNG original image"><div style="font-size:36px;margin-bottom:8px">◎</div><strong>${state.sourceFile?escape(state.file?.name||state.sourceFile.name):'Choose a clear JPG or PNG selfie'}</strong><p class="muted small">JPG / PNG · 480 px minimum short side · 2,560 px maximum long side · Max 8 MB for scanning · larger originals up to 24 MB can be prepared privately</p><label for="photo-file" class="photo-select-button">Choose photo</label><input id="photo-file" type="file" accept="image/jpeg,image/png" class="sr-only" aria-label="Choose selfie for YouCam analysis"><div class="photo-selected-preview">${state.preview?`<img class="photo-preview" src="${escape(state.preview)}" alt="Preview of your selected image. Nothing has been uploaded yet.">`:''}<span class="muted small">${state.sourceFile?((state.imageDimensions?state.imageDimensions.width+' × '+state.imageDimensions.height+' pixels • ':'')+(state.imageReady?'Ready for analysis':state.canPrepare?'Can be prepared privately':'Checking dimensions / not suitable for analysis')+' — not uploaded.'):'No photo selected yet.'}</span></div>${state.canPrepare?`<div class="local-prep-action"><button type="button" id="prepare-photo" class="secondary" ${state.preparing?"disabled":""}>${state.preparing?"Preparing locally…":"Prepare photo on this device →"}</button><p class="muted small">This runs entirely in your browser. It creates a smaller JPEG copy without filters or AI upscaling. No photo is sent to RoutineGap or YouCam until you explicitly start a scan.</p></div>`:""}</div>
 <div id="photo-readiness-panel" class="photo-readiness-panel" role="region" aria-label="Photo technical diagnostics and self-checklist"></div>
-<div class="consent-box" style="margin-top:14px"><label><input type="checkbox" id="consent" ${state.consent?'checked':''}><span>I understand my photo will be transferred to Perfect Corp for YouCam analysis. I have consent from the photographed person. Photos are not saved to RoutineGap's permanent database. This is a cosmetic assessment, not medical advice.</span></label></div><div class="field" style="margin-top:14px"><label for="demo-passcode">Live demo passcode (provided by project owner)</label><input id="demo-passcode" type="password" autocomplete="off" placeholder="Required only for real API calls" value="${escape(state.code)}"></div><p class="muted small">${state.liveEnabled?'YouCam API key authenticated with a free balance check. A real skin scan still needs to be tested.':state.providerConnection==='failed'?'The YouCam API key was rejected. The project owner must replace the key securely in Render before real scans can run.':state.providerConnection==='checking'?'YouCam API key verification is in progress. Reload after it finishes.':'The server is not yet connected to a YouCam API key. Sample mode works without a key.'} Real runs consume YouCam API units. The live route is intentionally protected against public credit abuse.</p><div class="panel-actions"><button id="live-scan" class="primary" ${state.busy||!state.liveEnabled||!state.imageReady||!!state.pending?'disabled':''}>${state.busy?'Working with YouCam…':state.pending?'Scan already started — resume below':'Analyze with YouCam →'}</button><button class="ghost" id="sample-report" ${state.busy?'disabled':''}>Explore example instead</button></div>
+<div class="consent-box" style="margin-top:14px"><label><input type="checkbox" id="consent" ${state.consent?'checked':''}><span>I understand my photo will be transferred to Perfect Corp for YouCam analysis. I have consent from the photographed person. Photos are not saved to RoutineGap's permanent database. This is a cosmetic assessment, not medical advice.</span></label></div><div class="field" style="margin-top:14px"><label for="demo-passcode">Live demo passcode (provided by project owner)</label><input id="demo-passcode" type="password" autocomplete="off" placeholder="Required only for real API calls" value="${escape(state.code)}"></div><p class="muted small">${state.liveEnabled?'YouCam API key authenticated with a free balance check. A real skin scan still needs to be tested.':state.providerConnection==='failed'?'The YouCam API key was rejected. The project owner must replace the key securely in Render before real scans can run.':state.providerConnection==='checking'?'YouCam API key verification is in progress. Reload after it finishes.':'The server is not yet connected to a YouCam API key. Sample mode works without a key.'} Real runs consume YouCam API units. The live route is intentionally protected against public credit abuse.</p><div class="panel-actions"><button id="live-scan" class="primary" ${state.busy||!state.liveEnabled||!state.imageReady||!!state.pending||!!state.uncertainSubmission?'disabled':''}>${state.busy?'Working with YouCam…':state.uncertainSubmission?'Submission unconfirmed — verify before retry':state.pending?'Scan already started — resume below':'Analyze with YouCam →'}</button><button class="ghost" id="sample-report" ${state.busy?'disabled':''}>Explore example instead</button></div>
 ${state.pending?`<div class="scan-resume-panel" role="group" aria-label="Resume an existing YouCam analysis"><strong>Your earlier analysis may still be running</strong><p class="muted small">Resume this session without uploading the photo again or starting another paid task. The scan receipt is saved in this browser tab for up to 24 hours; your photo is not stored by RoutineGap.</p><div class="panel-actions"><button type="button" id="resume-scan" class="secondary" ${state.busy||!state.liveEnabled?'disabled':''}>Resume existing scan →</button><button type="button" id="forget-scan" class="ghost" ${state.busy?'disabled':''}>Discard saved session</button></div></div>`:''}
 <div class="scan-feedback" id="scan-status" role="status" aria-live="polite">${state.feedback?`<div class="notice ${state.isError?'error':''}">${escape(state.feedback)}</div>`:''}</div></div>
 <div class="panel"><div class="eyebrow">STEP 02 • COSMETIC INSIGHTS</div><h3 style="margin-top:9px">Your scan report</h3>${markMode()}<div style="margin-top:18px">${reports.length?reports.map(x=>`<div class="report-card"><div><strong>${escape(x.type.replaceAll('_',' ').replace(/^./,c=>c.toUpperCase()))}</strong><div class="muted small">${state.scanSource==='sample'?'Illustrative example only':'YouCam reported cosmetic metric'}</div>
@@ -760,7 +811,7 @@ function renderHelp(){
  renderHelpResults();
 }
 function renderPrivacy(){
- const data=describeDataState({shelf:state.shelf,sampleInventory:state.sampleInventory,savedIds:state.savedIds,compareIds:state.compareIds,routineLog:state.routineLog,savedLiveReport:state.savedLiveReport,pending:state.pending,hasPhoto:!!state.file||!!state.preview,cartIds:state.cartIds});
+ const data=describeDataState({shelf:state.shelf,sampleInventory:state.sampleInventory,savedIds:state.savedIds,compareIds:state.compareIds,routineLog:state.routineLog,savedLiveReport:state.savedLiveReport,pending:state.pending,uncertainSubmission:state.uncertainSubmission,hasPhoto:!!state.file||!!state.preview,cartIds:state.cartIds});
  const presence=readStoragePresence(localStorage,sessionStorage);
  const rows=data.groups.map(group=>{
   const stored=presence.find(p=>p.id===group.id)||{};
@@ -884,12 +935,14 @@ async function resumePendingScan(){
   if(!state.pending)return notice('There is no saved scan to resume.',true);
   if(!state.liveEnabled)return notice('YouCam is not currently connected. Your pending session was not discarded.',true);
   if(!state.code)return notice('Enter your private demo passcode to resume the existing scan.',true);
-  state.busy=true;state.scan=null;state.scanSource=null;renderScan();
+  state.busy=true;state.scanPhase='processing';state.scanPoll=0;state.scan=null;state.scanSource=null;renderScan();
   notice('Resuming your existing YouCam task without re-uploading the photo or starting another paid request.');
   try{
     let completed=false;
     for(let i=0;i<17;i++){
       if(i>0)await new Promise(resolve=>setTimeout(resolve,7000));
+      state.scanPoll=i+1;
+      const track=document.querySelector('.scan-journey');if(track)track.outerHTML=renderScanJourney();
       const response=await fetch('/api/scan/status',{
         method:'POST',
         headers:{'Content-Type':'application/json','X-Demo-Access':state.code},
@@ -898,15 +951,15 @@ async function resumePendingScan(){
       let result;
       try{result=await response.json();}catch{throw Error('YouCam returned an unreadable task-status response. Resume this scan later.');}
       if(!response.ok){
-        if(response.status===404){savePendingScan(null);throw Error('The saved scan session expired or became invalid. Your earlier provider result could not be recovered.');}
+        if(response.status===404){savePendingScan(null);state.scanPhase='failed';throw Error('The saved scan session expired or became invalid. Your earlier provider result could not be recovered.');}
         throw Error(result.error||'Could not retrieve the existing scan. Resume the same session later.');
       }
       if(result.state==='error'){
-        savePendingScan(null);throw Error(result.message||'YouCam could not analyze the photo. A clearer original may be needed.');
+        savePendingScan(null);state.scanPhase='failed';throw Error(result.message||'YouCam could not analyze the photo. A clearer original may be needed.');
       }
       if(result.state==='success'){
         if(!Array.isArray(result.signals)||!result.signals.length)throw Error('YouCam returned no usable skin observations. The existing scan is still available for inspection.');
-        state.scan=result.signals;state.scanSource='live';savePendingScan(null);completed=true;break;
+        state.scan=result.signals;state.scanSource='live';state.scanPhase='complete';savePendingScan(null);completed=true;break;
       }
       notice('YouCam is still processing your existing task — check '+(i+1)+' of 17. You can come back and resume without re-uploading.');
     }
@@ -916,34 +969,52 @@ async function resumePendingScan(){
   finally{state.busy=false;renderScan();drawMessage();}
 }
 async function scanLive(){
-  if(state.busy)return;
-  if(state.pending)return notice('An existing scan is still pending. Resume it rather than paying for another scan; discard the saved session only if you intend to start a new one.',true);
-  if(!state.liveEnabled)return notice('The YouCam API is not currently authenticated.',true);
-  if(state.preparing)return notice('Wait for local photo preparation to finish.',true);if(!state.file)return notice('Select a suitable JPG or PNG photo first. If it is too large, use Prepare photo on this device.',true);
-  if(!state.imageReady)return notice('The selected photo must satisfy the YouCam resolution requirements before uploading.',true);
-  if(!state.consent)return notice('Photo-processing consent is required before sending your image.',true);
-  if(!state.code)return notice('Enter the protected live demo passcode.',true);
-  state.busy=true;state.scan=null;state.scanSource=null;state.goalFromScan=null;renderScan();
-  notice('Uploading your consented photo to YouCam and requesting a new skin analysis task…');
-  try{
-    const response=await fetch('/api/scan',{
-      method:'POST',
-      headers:{'Content-Type':state.file.type,'X-Image-Filename':state.file.name,
-        'X-Skin-Consent':'yes','X-Demo-Access':state.code},
-      body:state.file
-    });
-    let data;
-    try{data=await response.json();}catch{throw Error('The server returned an unreadable response. Check with the project owner before sending the photo again.');}
-    if(!response.ok)throw Error(data.error||'Could not start the YouCam scan.');
-    if(!data.receipt)throw Error('The provider task was started but no recovery receipt was returned. Contact the owner before resubmitting the photo.');
-    savePendingScan({receipt:data.receipt,createdAt:Date.now()});
-    // Starting a new provider task invalidates any explicitly saved older report.
-    try{sessionStorage.removeItem(LIVE_REPORT_SESSION_KEY);}catch{}
-    state.savedLiveReport=false;
-    notice('The task started. Your private recovery receipt is saved for this tab. No second upload is needed.');
-  }catch(error){notice(error?.message||'The scan could not start. No sample result was substituted.',true);}
-  finally{state.busy=false;renderScan();drawMessage();}
-  if(state.pending)await resumePendingScan();
+ if(state.busy)return;
+ if(state.uncertainSubmission)return notice('An earlier upload may already have started a paid task. Verify provider activity before starting another.',true);
+ if(state.pending)return notice('An existing task has a recovery receipt. Resume it rather than paying for another scan.',true);
+ if(!state.liveEnabled)return notice('The YouCam API is not currently authenticated.',true);
+ if(state.preparing)return notice('Wait for local photo preparation to finish.',true);
+ if(!state.file)return notice('Select a suitable JPG or PNG photo first.',true);
+ if(!state.imageReady)return notice('The photo must meet YouCam resolution requirements.',true);
+ if(!state.consent)return notice('Photo-processing consent is required before sharing the image.',true);
+ if(!state.code)return notice('Enter the protected live demo passcode.',true);
+ state.busy=true;state.scanPhase='uploading';state.scanPoll=0;
+ state.scan=null;state.scanSource=null;state.goalFromScan=null;renderScan();
+ notice('Sending your explicitly consented photo. Do not submit again if this request is interrupted.');
+ let response=null,unreadable=false,taskStarted=false;
+ try{
+  response=await fetch('/api/scan',{
+   method:'POST',headers:{'Content-Type':state.file.type,'X-Image-Filename':state.file.name,
+    'X-Skin-Consent':'yes','X-Demo-Access':state.code},body:state.file,
+   signal:AbortSignal.timeout(90000)
+  });
+  let data;
+  try{data=await response.json();}catch{unreadable=true;throw Error('The scan submission response could not be read.');}
+  const outcome=classifyStartResponse({status:response.status,receipt:data?.receipt});
+  if(outcome==='rejected')throw Error(data?.error||'The server declined the scan. Check the stated requirement before retrying.');
+  if(outcome!=='started')throw Error('The scan response was missing a valid recovery receipt.');
+  const persisted=savePendingScan({receipt:data.receipt,createdAt:Date.now()});
+  saveUncertainSubmission(null);
+  taskStarted=true;state.scanPhase='processing';
+  // Starting a new task invalidates any previously saved older cosmetic observations.
+  try{sessionStorage.removeItem(LIVE_REPORT_SESSION_KEY);}catch{}
+  state.savedLiveReport=false;
+  notice(persisted?'YouCam returned a task receipt, stored in this tab. Resume checks without another upload.':'YouCam returned a task receipt, but this browser blocked tab storage. Keep this page open and do not resubmit.');
+ }catch(error){
+  const outcome=classifyStartResponse({status:response?.status??null,networkFailure:response===null,unreadable});
+  if(outcome==='uncertain'){
+   const stored=saveUncertainSubmission(newUncertainMarker());
+   state.scanPhase='uncertain';
+   notice('Submission outcome unknown: a YouCam task may already exist. Do not upload the photo again until the owner checks provider activity.'+
+     (stored?' A receipt-free warning was saved in this tab for 24 hours.':' This browser could not preserve the warning after a reload.'),true);
+  }else{
+   state.scanPhase='idle';
+   notice(error?.message||'The server declined this request. No example result was substituted.',true);
+  }
+ }finally{
+  state.busy=false;renderScan();drawMessage();
+ }
+ if(taskStarted&&state.pending)await resumePendingScan();
 }
 
 function saveLiveReportInTab(){
@@ -1217,7 +1288,7 @@ document.addEventListener('click',event=>{
  if(event.target.closest('#cart-clear')){state.cartIds=[];renderShop(decide());notice('Demo cart emptied. No transaction was made.');return;}
  if(event.target.closest('#reset-catalog')||event.target.closest('#reset-empty-catalog')){state.catalogQuery='';state.catalogStep='all';state.catalogDecision='all';state.catalogSort='recommended';state.savedOnly=false;state.affordableOnly=false;renderShop(decide());return;}
  if(event.target.closest('#clear-routine')){state.routineLog=null;try{localStorage.removeItem(ROUTINE_LOG_KEY);}catch{}renderRoutine(decide());notice('Today’s checklist cleared on this device.');return;}
- if(event.target.closest('#save-live-report'))return saveLiveReportInTab();if(event.target.closest('#forget-live-report'))return forgetLiveReportInTab();if(event.target.closest('#guided-demo'))return startProductTour();if(event.target.closest('#demo-step-scan'))return setSample();if(event.target.closest('#export-decision'))return downloadDecisionBrief();if(event.target.closest('#prepare-photo'))return void prepareSelectedPhoto();if(event.target.closest('#sample-report'))return setSample();if(event.target.closest('#live-scan'))return void scanLive();if(event.target.closest('#resume-scan'))return void resumePendingScan();if(event.target.closest('#forget-scan')){if(state.busy)return;savePendingScan(null);renderScan();notice('Saved scan reference discarded. This does not cancel a task already running at Perfect Corp.');return;}if(event.target.closest('#reset-shelf')){if(!state.sampleInventory&&state.shelf.length&&!window.confirm('Replace your current shelf with fictional starter products? Your existing entries can be restored with Undo change on this page.'))return;snapshotShelf();state.shelf=sampleShelf.map(x=>({...x}));state.sampleInventory=true;state.shelfQuery='';finishShelfMutation(true);notice('Illustrative starter shelf loaded. This is not a record of your own products.');return;}
+ if(event.target.closest('#save-live-report'))return saveLiveReportInTab();if(event.target.closest('#forget-live-report'))return forgetLiveReportInTab();if(event.target.closest('#guided-demo'))return startProductTour();if(event.target.closest('#demo-step-scan'))return setSample();if(event.target.closest('#export-decision'))return downloadDecisionBrief();if(event.target.closest('#prepare-photo'))return void prepareSelectedPhoto();if(event.target.closest('#sample-report'))return setSample();if(event.target.closest('#live-scan'))return void scanLive();if(event.target.closest('#scan-uncertain-clear'))return clearUncertainSubmission();if(event.target.closest('#resume-scan'))return void resumePendingScan();if(event.target.closest('#forget-scan')){if(state.busy)return;savePendingScan(null);renderScan();notice('Saved scan reference discarded. This does not cancel a task already running at Perfect Corp.');return;}if(event.target.closest('#reset-shelf')){if(!state.sampleInventory&&state.shelf.length&&!window.confirm('Replace your current shelf with fictional starter products? Your existing entries can be restored with Undo change on this page.'))return;snapshotShelf();state.shelf=sampleShelf.map(x=>({...x}));state.sampleInventory=true;state.shelfQuery='';finishShelfMutation(true);notice('Illustrative starter shelf loaded. This is not a record of your own products.');return;}
  if(event.target.closest('#clear-shelf')){if(state.shelf.length&&!window.confirm('Clear all '+state.shelf.length+' products? You can immediately undo this change.'))return;snapshotShelf();state.shelf=[];state.sampleInventory=false;state.shelfQuery='';finishShelfMutation(true);notice('Shelf cleared. Use Undo change to restore your entries.');return;}
  const cart=event.target.closest('[data-cart]');if(cart){state.cartIds=state.cartIds.includes(cart.dataset.cart)?state.cartIds.filter(x=>x!==cart.dataset.cart):[...state.cartIds,cart.dataset.cart];renderShop(decide());return;}
  if(event.target.closest('#cart-auto')){state.cartIds=decide().cartIds;renderShop(decide());return;}

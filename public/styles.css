@@ -954,3 +954,37 @@ body.is-preference-open{overflow:hidden}
 @media(max-width:460px){.pref-goal-grid{gap:7px}.pref-goal-card{min-height:108px;padding:12px;gap:9px}.pref-goal-card.active{padding:11px}.pref-goal-card strong{font-size:12px}.pref-goal-card small{font-size:9px}.pref-budget-presets{grid-template-columns:repeat(2,1fr)}.pref-budget-display strong{font-size:30px}.pref-budget-display{padding:16px}.pref-action-row{flex-wrap:wrap}.pref-action-row>div{margin-left:auto}.pref-plan-preview{padding:14px}}
 @media(prefers-reduced-motion:reduce){.pref-goal-card{transition:none}}
 @media print{.preference-overlay,.preferences-bridge>button{display:none!important}}
+
+
+/* Scan Operations Center — explicit provider journey, not an invented percent complete. */
+.scan-journey{margin:8px 0 22px;border:1px solid #d9e6d5;background:linear-gradient(125deg,#fcfef9,#f1f8ed);padding:24px 27px 17px;border-radius:20px;box-shadow:0 10px 28px #173f2412}
+.scan-journey-heading{display:flex;align-items:start;justify-content:space-between;gap:16px}
+.scan-journey-heading>div{flex:1;min-width:0}
+.scan-journey-heading h2{font:normal clamp(22px,2.5vw,29px)/1.23 Georgia,serif;color:#2f563f;letter-spacing:-.5px;margin:8px 0}
+.scan-journey-heading p{font-size:11px;line-height:1.75;color:#738a77;margin:0;max-width:850px}
+.scan-journey-chip{font-size:9px;line-height:1.4;font-weight:900;letter-spacing:.7px;text-align:center;border-radius:999px;border:1px solid #dce8d7;padding:9px 12px;color:#67836a;background:#e9f2e4;white-space:normal;flex-shrink:0;max-width:210px}
+.scan-journey-chip.warning{border-color:#dfb9a4;background:#fff0e4;color:#995f39}
+.scan-journey-chip.pending,.scan-journey-chip.working{border-color:#d8d4ad;background:#fdf7dc;color:#806c39}
+.scan-journey-chip.success{border-color:#b7dcb8;background:#e6f5e5;color:#367548}
+.scan-journey-chip.sample{border-color:#d8dcdf;background:#f0f2f5;color:#62727b}
+.scan-journey-stages{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:21px 0 14px}
+.scan-journey-stage{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid #e0e9dd;border-radius:13px;padding:13px 11px;min-width:0}
+.scan-journey-stage-id{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border-radius:50%;border:1px solid #e0e9de;background:#f1f5ef;color:#92a392;font-size:10px;font-weight:900}
+.scan-journey-stage.done .scan-journey-stage-id{background:#e3f4e0;border-color:#b8deb6;color:#32754a}
+.scan-journey-stage.active .scan-journey-stage-id{background:#fdf0d1;border-color:#e3d2a1;color:#967442}
+.scan-journey-stage.uncertain .scan-journey-stage-id{background:#fff0df;border-color:#e5bea3;color:#aa663d}
+.scan-journey-stage>div{display:flex;flex-direction:column;min-width:0;gap:4px}
+.scan-journey-stage strong{font-size:11px;line-height:1.4;color:#406149}
+.scan-journey-stage small{font-size:9px;color:#94a496;line-height:1.45}
+.scan-uncertainty-banner{border:1px solid #e7b89b;background:#fff2e6;border-radius:13px;padding:15px 16px;margin-top:16px;display:flex;gap:16px;align-items:center;justify-content:space-between}
+.scan-uncertainty-banner>div{flex:1}
+.scan-uncertainty-banner strong{font-size:13px;color:#945334}
+.scan-uncertainty-banner p{font-size:11px;color:#886b58;line-height:1.65;margin:7px 0 0}
+.scan-uncertainty-banner button{flex-shrink:0;max-width:240px;white-space:normal;text-align:center}
+.scan-uncertainty-banner button:focus-visible{outline:3px solid #b17c53;outline-offset:2px}
+.scan-journey-truth{border-top:1px solid #e1e9dd;padding-top:12px;margin:13px 0 0;font-size:10px;line-height:1.7;color:#8c9f8d}
+@media(max-width:1050px){.scan-journey-stages{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:710px){.scan-journey{padding:19px 16px}.scan-journey-heading{flex-direction:column;gap:10px}.scan-journey-chip{align-self:start}.scan-uncertainty-banner{flex-direction:column;align-items:stretch}.scan-uncertainty-banner button{max-width:100%}}
+@media(max-width:410px){.scan-journey-stages{gap:7px}.scan-journey-stage{padding:10px 7px;gap:7px}.scan-journey-stage-id{width:24px;height:24px;flex-basis:24px}.scan-journey-stage strong{font-size:10px}.scan-journey-stage small{font-size:8px}}
+@media(prefers-reduced-motion:reduce){.scan-journey-stage{transition:none}}
+@media print{.scan-uncertainty-banner button{display:none!important}}

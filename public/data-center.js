@@ -10,7 +10,7 @@ export const DATA_GROUPS=Object.freeze([
   {id:'comparison',title:'Comparison shortlist',description:'Identifiers for up to three fictional concepts, separate from saved ideas.',keys:[{scope:'local',key:'routinegap_compare_ids_v1'}]},
   {id:'checklist',title:'Daily routine checkmarks',description:'Your local daily checklist state, not evidence of treatment or medical progress.',keys:[{scope:'local',key:'routinegap_routine_checklist_v1'}]},
   {id:'liveReport',title:'Optional saved live observations',description:'If you explicitly saved one, a limited real YouCam cosmetic report stored in this tab for up to 24 hours.',keys:[{scope:'session',key:'routinegap_saved_live_report_v1'}]},
-  {id:'pending',title:'Pending scan reference',description:'A task reference in this tab, used to resume a scan task after interruption.',keys:[{scope:'session',key:'routinegap_pending_scan_v1'}]}
+  {id:'pending',title:'Scan recovery & uncertainty',description:'A resumable task reference or a minimal timestamp marker when submission could not be confirmed. No photo, passcode or provider ID is stored in that marker. Deleting it cannot cancel a provider task.',keys:[{scope:'session',key:'routinegap_pending_scan_v1'},{scope:'session',key:'routinegap_uncertain_scan_v1'}]}
 ]);
 export const ERASE_CATEGORIES=Object.freeze([...DATA_GROUPS.map(x=>x.id),'all']);
 export function dataGroupsFor(category){
@@ -18,7 +18,7 @@ export function dataGroupsFor(category){
  const found=DATA_GROUPS.find(x=>x.id===category);
  return found?[found]:[];
 }
-export function describeDataState({shelf=[],sampleInventory=true,savedIds=[],compareIds=[],routineLog=null,savedLiveReport=false,pending=null,hasPhoto=false,cartIds=[]}={}){
+export function describeDataState({shelf=[],sampleInventory=true,savedIds=[],compareIds=[],routineLog=null,savedLiveReport=false,pending=null,uncertainSubmission=null,hasPhoto=false,cartIds=[]}={}){
  const actual=!sampleInventory&&Array.isArray(shelf)?shelf.length:0;
  const saved=Array.isArray(savedIds)?savedIds.length:0;
  const compared=Array.isArray(compareIds)?compareIds.length:0;
@@ -28,7 +28,7 @@ export function describeDataState({shelf=[],sampleInventory=true,savedIds=[],com
   comparison:{count:compared,hasValue:compared>0,status:compared+' selected concept ID'+(compared===1?'':'s')},
   checklist:{count:0,hasValue:!!routineLog,status:routineLog?'Saved daily checkmarks':'No saved checklist'},
   liveReport:{count:0,hasValue:!!savedLiveReport,status:savedLiveReport?'Report available in this tab':'No saved report'},
-  pending:{count:0,hasValue:!!pending,status:pending?'Task reference available':'No saved reference'}
+  pending:{count:0,hasValue:!!pending||!!uncertainSubmission,status:pending?'Task receipt available':uncertainSubmission?'Unconfirmed submission marker; no receipt':'No saved recovery data'}
  };
  return {groups:DATA_GROUPS.map(g=>({...g,...data[g.id]})),realProducts:actual,
    hasPhoto:!!hasPhoto,cartCount:Array.isArray(cartIds)?cartIds.length:0,
