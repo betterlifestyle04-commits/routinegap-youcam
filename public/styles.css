@@ -49,3 +49,9 @@
 .photo-guide-footnote a{color:#21674c;text-decoration:underline}
 @media(max-width:1050px){.photo-capture-list,.photo-repair-grid{grid-template-columns:1fr}.photo-tip{max-width:600px}}
 @media(max-width:760px){.scan-photo-guide{padding:18px;border-radius:16px}.scan-guide-header{flex-direction:column}.scan-guide-ready{white-space:normal}.photo-specs{grid-template-columns:1fr;gap:8px}.photo-spec{padding:12px 14px}.photo-spec strong{font-size:21px}.photo-tools{grid-template-columns:1fr}.photo-example-figure{padding:7px}}
+
+.scan-resume-panel{margin-top:14px;padding:16px 18px;border:1px solid #cbdcce;background:#edf5eb;border-radius:14px}
+.scan-resume-panel strong{display:block;color:#244f3d;font-size:14px;margin-bottom:7px}
+.scan-resume-panel p{line-height:1.65;margin:0 0 10px}
+.scan-resume-panel .panel-actions{margin-top:12px}
+.scan-resume-panel .secondary{border-color:#79a58a}

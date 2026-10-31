@@ -2,7 +2,23 @@ import {catalog,goals,stepLabels,sampleShelf,sampleScan,normalizeShelf,evaluateS
 const $=selector=>document.querySelector(selector);
 const escape=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const money=v=>'$'+Number(v||0).toFixed(0);
-const state={tab:'overview',shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:null,scanSource:null,cartIds:[],file:null,preview:null,imageReady:false,imageDimensions:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',busy:false,feedback:'',isError:false};
+const PENDING_SCAN_KEY='routinegap_pending_scan_v1';
+function readPendingScan(){
+  try{
+    const pending=JSON.parse(sessionStorage.getItem(PENDING_SCAN_KEY)||'null');
+    if(pending&&typeof pending.receipt==='string'&&pending.receipt.length<=600&&
+       Number.isFinite(pending.createdAt)&&pending.createdAt<=Date.now()&&
+       Date.now()-pending.createdAt<24*60*60*1000)return pending;
+    sessionStorage.removeItem(PENDING_SCAN_KEY);
+  }catch{}
+  return null;
+}
+function savePendingScan(pending){
+  state.pending=pending;
+  try{if(pending)sessionStorage.setItem(PENDING_SCAN_KEY,JSON.stringify(pending));
+      else sessionStorage.removeItem(PENDING_SCAN_KEY);}catch{}
+}
+const state={tab:'overview',shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:null,scanSource:null,cartIds:[],file:null,preview:null,imageReady:false,imageDimensions:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false};
 try{const saved=JSON.parse(localStorage.getItem('routinegap_state')||'null');if(saved&&typeof saved==='object'){
   state.shelf=normalizeShelf(saved.shelf);state.budget=Number.isFinite(saved.budget)?Math.max(0,Math.min(1000,saved.budget)):60;state.goal=goals.some(g=>g.id===saved.goal)?saved.goal:'moisture';state.fragranceFree=saved.fragranceFree===true;state.sampleInventory=saved.sampleInventory===true;
 }}catch{}
@@ -20,7 +36,9 @@ function renderOverview(d){$('#view-overview').innerHTML=`<div class="hero"><div
 <div class="stats"><div class="stat"><span>Products on your shelf</span><strong>${d.owned.length}</strong><small>${state.sampleInventory?'Illustrative sample inventory':'Your saved local inventory'}</small></div><div class="stat"><span>Suggested cart</span><strong>${money(d.cartTotal)}</strong><small>Within ${money(d.budget)} budget</small></div><div class="stat"><span>Duplicate purchases avoided</span><strong>${d.skippedRedundant}</strong><small>Illustrative catalog options screened</small></div></div>
 <div class="section-title"><h2>Today's smart decisions</h2><button class="tiny-btn" data-go="shop">Open shopping studio ↗</button></div><div class="two-col"><div class="panel"><div class="eyebrow">SHELF AUDIT</div><h3 style="margin-top:9px">${d.missingSteps.length?'Room for a smarter routine':'Your essentials are covered'}</h3><p class="muted">${escape(d.message)} We start with what you own, before recommending anything to buy.</p>${['cleanser','moisturizer','spf'].map(s=>`<div class="list-row"><span>${escape(stepLabels[s])}</span><span class="label-pill ${d.owned.some(x=>x.step===s)?'':'peach'}">${d.owned.some(x=>x.step===s)?'IN YOUR SHELF':'POTENTIAL GAP'}</span></div>`).join('')}<div class="panel-actions"><button class="secondary" data-go="shelf">Review my shelf →</button></div></div><div class="panel"><div class="eyebrow">WHY IT MATTERS</div><h3 style="margin-top:9px">Clarity before checkout</h3><p class="muted">Connect a real YouCam Skin Analysis session to review cosmetic observations, or preview the workflow with clearly labeled example data.</p><div class="list-row"><span>Skin analysis</span>${markMode()}</div><div class="list-row"><span>Live provider configuration</span><span class="label-pill ${state.liveEnabled?'':'peach'}">${state.liveEnabled?'KEY AUTHENTICATED':state.providerConnection==='failed'?'AUTHENTICATION FAILED':state.providerConnection==='checking'?'CHECKING API KEY':'NOT CONNECTED'}</span></div><div class="list-row"><span>Recommendation logic</span><span class="label-pill">TRANSPARENT RULES</span></div><div class="panel-actions"><button class="secondary" data-go="scan">View skin studio →</button></div></div></div>`;}
 function renderScan(){const reports=state.scan||[];$('#view-scan').innerHTML=`${title('SKIN SIGNALS','The skin intelligence studio','Begin with a clear front-facing selfie for live Perfect Corp YouCam Skin Analysis, or explore an unmistakably illustrative sample. Cosmetic signals are not medical diagnoses.')}
-<div class="two-col"><div class="panel"><div class="eyebrow">STEP 01 • YOUR IMAGE</div><h3 style="margin-top:9px">Start a skin-aware session</h3><div class="scan-input" id="upload-area"><div style="font-size:36px;margin-bottom:8px">◎</div><strong>${state.file?escape(state.file.name):'Choose a clear JPG or PNG selfie'}</strong><p class="muted small">JPG / PNG · 480 px minimum short side · 2,560 px maximum long side · Max 8 MB</p><label for="photo-file" class="photo-select-button">Choose photo</label><input id="photo-file" type="file" accept="image/jpeg,image/png" class="sr-only" aria-label="Choose selfie for YouCam analysis"><div class="photo-selected-preview">${state.preview?`<img class="photo-preview" src="${escape(state.preview)}" alt="Preview of your selected image. Nothing has been uploaded yet.">`:''}<span class="muted small">${state.file?((state.imageDimensions?state.imageDimensions.width+' × '+state.imageDimensions.height+' pixels • ':'')+(state.imageReady?'Ready for analysis':'Checking dimensions / not suitable for analysis')+' — not uploaded.'):'No photo selected yet.'}</span></div></div><div class="consent-box" style="margin-top:14px"><label><input type="checkbox" id="consent" ${state.consent?'checked':''}><span>I understand my photo will be transferred to Perfect Corp for YouCam analysis. I have consent from the photographed person. Photos are not saved to RoutineGap's permanent database. This is a cosmetic assessment, not medical advice.</span></label></div><div class="field" style="margin-top:14px"><label for="demo-passcode">Live demo passcode (provided by project owner)</label><input id="demo-passcode" type="password" autocomplete="off" placeholder="Required only for real API calls" value="${escape(state.code)}"></div><p class="muted small">${state.liveEnabled?'YouCam API key authenticated with a free balance check. A real skin scan still needs to be tested.':state.providerConnection==='failed'?'The YouCam API key was rejected. The project owner must replace the key securely in Render before real scans can run.':state.providerConnection==='checking'?'YouCam API key verification is in progress. Reload after it finishes.':'The server is not yet connected to a YouCam API key. Sample mode works without a key.'} Real runs consume YouCam API units. The live route is intentionally protected against public credit abuse.</p><div class="panel-actions"><button id="live-scan" class="primary" ${state.busy||!state.liveEnabled||!state.imageReady?'disabled':''}>${state.busy?'Working with YouCam…':'Analyze with YouCam →'}</button><button class="ghost" id="sample-report">Explore example instead</button></div><div class="scan-feedback" id="scan-status" role="status" aria-live="polite">${state.feedback?`<div class="notice ${state.isError?'error':''}">${escape(state.feedback)}</div>`:''}</div></div>
+<div class="two-col"><div class="panel"><div class="eyebrow">STEP 01 • YOUR IMAGE</div><h3 style="margin-top:9px">Start a skin-aware session</h3><div class="scan-input" id="upload-area"><div style="font-size:36px;margin-bottom:8px">◎</div><strong>${state.file?escape(state.file.name):'Choose a clear JPG or PNG selfie'}</strong><p class="muted small">JPG / PNG · 480 px minimum short side · 2,560 px maximum long side · Max 8 MB</p><label for="photo-file" class="photo-select-button">Choose photo</label><input id="photo-file" type="file" accept="image/jpeg,image/png" class="sr-only" aria-label="Choose selfie for YouCam analysis"><div class="photo-selected-preview">${state.preview?`<img class="photo-preview" src="${escape(state.preview)}" alt="Preview of your selected image. Nothing has been uploaded yet.">`:''}<span class="muted small">${state.file?((state.imageDimensions?state.imageDimensions.width+' × '+state.imageDimensions.height+' pixels • ':'')+(state.imageReady?'Ready for analysis':'Checking dimensions / not suitable for analysis')+' — not uploaded.'):'No photo selected yet.'}</span></div></div><div class="consent-box" style="margin-top:14px"><label><input type="checkbox" id="consent" ${state.consent?'checked':''}><span>I understand my photo will be transferred to Perfect Corp for YouCam analysis. I have consent from the photographed person. Photos are not saved to RoutineGap's permanent database. This is a cosmetic assessment, not medical advice.</span></label></div><div class="field" style="margin-top:14px"><label for="demo-passcode">Live demo passcode (provided by project owner)</label><input id="demo-passcode" type="password" autocomplete="off" placeholder="Required only for real API calls" value="${escape(state.code)}"></div><p class="muted small">${state.liveEnabled?'YouCam API key authenticated with a free balance check. A real skin scan still needs to be tested.':state.providerConnection==='failed'?'The YouCam API key was rejected. The project owner must replace the key securely in Render before real scans can run.':state.providerConnection==='checking'?'YouCam API key verification is in progress. Reload after it finishes.':'The server is not yet connected to a YouCam API key. Sample mode works without a key.'} Real runs consume YouCam API units. The live route is intentionally protected against public credit abuse.</p><div class="panel-actions"><button id="live-scan" class="primary" ${state.busy||!state.liveEnabled||!state.imageReady||!!state.pending?'disabled':''}>${state.busy?'Working with YouCam…':state.pending?'Scan already started — resume below':'Analyze with YouCam →'}</button><button class="ghost" id="sample-report" ${state.busy?'disabled':''}>Explore example instead</button></div>
+${state.pending?`<div class="scan-resume-panel" role="group" aria-label="Resume an existing YouCam analysis"><strong>Your earlier analysis may still be running</strong><p class="muted small">Resume this session without uploading the photo again or starting another paid task. The scan receipt is saved in this browser tab for up to 24 hours; your photo is not stored by RoutineGap.</p><div class="panel-actions"><button type="button" id="resume-scan" class="secondary" ${state.busy||!state.liveEnabled?'disabled':''}>Resume existing scan →</button><button type="button" id="forget-scan" class="ghost" ${state.busy?'disabled':''}>Discard saved session</button></div></div>`:''}
+<div class="scan-feedback" id="scan-status" role="status" aria-live="polite">${state.feedback?`<div class="notice ${state.isError?'error':''}">${escape(state.feedback)}</div>`:''}</div></div>
 <div class="panel"><div class="eyebrow">STEP 02 • COSMETIC INSIGHTS</div><h3 style="margin-top:9px">Your scan report</h3>${markMode()}<div style="margin-top:18px">${reports.length?reports.map(x=>`<div class="report-card"><div><strong>${escape(x.type.replaceAll('_',' ').replace(/^./,c=>c.toUpperCase()))}</strong><div class="muted small">${state.scanSource==='sample'?'Illustrative example only':'YouCam reported cosmetic metric'}</div></div><span class="signal-score">${Number.isFinite(x.uiScore)?escape(x.uiScore):x.type==='skin_type'&&typeof x.regions?.whole==='string'?escape(x.regions.whole):'—'}</span></div>`).join(''):`<div class="empty"><div style="font-size:34px;margin-bottom:8px">✧</div><strong>No skin report yet</strong><p>Explore the sample or connect YouCam for real results.</p></div>`}</div><p class="muted small">YouCam's UI scores are cosmetic presentation scores, not clinical risk estimates, diagnostic certainty or product-effectiveness predictions. Your shopping decisions below depend on your stated goals and owned shelf—not inferred disease.</p>${reports.length?'<div class="panel-actions"><button class="secondary" data-go="shop">Continue to shopping studio →</button></div>':''}</div></div>
 <section class="scan-photo-guide" aria-labelledby="photo-guide-title">
   <div class="scan-guide-header">
@@ -90,16 +108,77 @@ function storeFile(file){
   probe.onerror=()=>{if(generation!==imageSelection)return;state.imageReady=false;renderScan();notice('Unable to decode this photo. Please choose another JPEG or PNG.',true);};
   probe.src=state.preview;
 }
-function setSample(){state.scan=sampleScan.map(x=>({...x}));state.scanSource='sample';navigate('scan');notice('Illustrative sample loaded. These scores were not generated by the YouCam API.');}
-async function scanLive(){if(state.busy)return;if(!state.liveEnabled)return notice('Live YouCam integration is not configured yet.',true);if(!state.file)return notice('Select a JPG or PNG selfie first.',true);if(!state.imageReady)return notice('The selected photo must satisfy the YouCam resolution requirements before uploading.',true);if(!state.consent)return notice('Photo-processing consent is required before sending your image.',true);if(!state.code)return notice('Enter the protected live demo passcode.',true);
- state.busy=true;state.scan=null;state.scanSource=null;renderScan();notice('Uploading selfie to Perfect Corp and creating the skin analysis task…');
- try{const response=await fetch('/api/scan',{method:'POST',headers:{'Content-Type':state.file.type,'X-Image-Filename':state.file.name,'X-Skin-Consent':'yes','X-Demo-Access':state.code},body:state.file});const data=await response.json();if(!response.ok)throw Error(data.error||'Could not start scan.');if(!data.taskId)throw Error('Missing provider task ID.');let completed=false;
- for(let i=0;i<17;i++){await new Promise(resolve=>setTimeout(resolve,i===0?3500:7000));notice(`Waiting for YouCam result… attempt ${i+1} / 17`);const statusResp=await fetch('/api/scan/status?task_id='+encodeURIComponent(data.taskId),{headers:{'X-Demo-Access':state.code}});const result=await statusResp.json();if(!statusResp.ok)throw Error(result.error||'Failed to check task status.');if(result.state==='error')throw Error(result.message||'YouCam could not complete the analysis.');if(result.state==='success'){state.scan=result.signals;state.scanSource='live';completed=true;break;}}
- if(!completed)throw Error('YouCam is still processing. This session stopped polling after its demo timeout; do not immediately resubmit a photo.');notice('Real YouCam result loaded. Scores are cosmetic observations, not diagnoses.');
- }catch(err){notice(err.message||'The YouCam scan did not succeed. No sample result was substituted.',true);}finally{state.busy=false;renderScan();drawMessage();}}
+function setSample(){
+  if(state.busy)return notice('The live scan is still processing. Wait until it finishes before opening the example.',true);
+  state.scan=sampleScan.map(x=>({...x}));state.scanSource='sample';navigate('scan');
+  notice('Illustrative sample loaded. These scores were not generated by the YouCam API.');
+}
+async function resumePendingScan(){
+  if(state.busy)return;
+  if(!state.pending)return notice('There is no saved scan to resume.',true);
+  if(!state.liveEnabled)return notice('YouCam is not currently connected. Your pending session was not discarded.',true);
+  if(!state.code)return notice('Enter your private demo passcode to resume the existing scan.',true);
+  state.busy=true;state.scan=null;state.scanSource=null;renderScan();
+  notice('Resuming your existing YouCam task without re-uploading the photo or starting another paid request.');
+  try{
+    let completed=false;
+    for(let i=0;i<17;i++){
+      if(i>0)await new Promise(resolve=>setTimeout(resolve,7000));
+      const response=await fetch('/api/scan/status',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-Demo-Access':state.code},
+        body:JSON.stringify({receipt:state.pending.receipt})
+      });
+      let result;
+      try{result=await response.json();}catch{throw Error('YouCam returned an unreadable task-status response. Resume this scan later.');}
+      if(!response.ok){
+        if(response.status===404){savePendingScan(null);throw Error('The saved scan session expired or became invalid. Your earlier provider result could not be recovered.');}
+        throw Error(result.error||'Could not retrieve the existing scan. Resume the same session later.');
+      }
+      if(result.state==='error'){
+        savePendingScan(null);throw Error(result.message||'YouCam could not analyze the photo. A clearer original may be needed.');
+      }
+      if(result.state==='success'){
+        if(!Array.isArray(result.signals)||!result.signals.length)throw Error('YouCam returned no usable skin observations. The existing scan is still available for inspection.');
+        state.scan=result.signals;state.scanSource='live';savePendingScan(null);completed=true;break;
+      }
+      notice('YouCam is still processing your existing task — check '+(i+1)+' of 17. You can come back and resume without re-uploading.');
+    }
+    if(!completed)throw Error('The provider task is still running. Your session was saved; press Resume existing scan later rather than starting another request.');
+    notice('Your real YouCam cosmetic report is ready. These are vendor observations, not medical diagnoses.');
+  }catch(error){notice(error?.message||'Could not finish checking this task. Your session remains available for resuming.',true);}
+  finally{state.busy=false;renderScan();drawMessage();}
+}
+async function scanLive(){
+  if(state.busy)return;
+  if(state.pending)return notice('An existing scan is still pending. Resume it rather than paying for another scan; discard the saved session only if you intend to start a new one.',true);
+  if(!state.liveEnabled)return notice('The YouCam API is not currently authenticated.',true);
+  if(!state.file)return notice('Select a JPG or PNG selfie first.',true);
+  if(!state.imageReady)return notice('The selected photo must satisfy the YouCam resolution requirements before uploading.',true);
+  if(!state.consent)return notice('Photo-processing consent is required before sending your image.',true);
+  if(!state.code)return notice('Enter the protected live demo passcode.',true);
+  state.busy=true;state.scan=null;state.scanSource=null;renderScan();
+  notice('Uploading your consented photo to YouCam and requesting a new skin analysis task…');
+  try{
+    const response=await fetch('/api/scan',{
+      method:'POST',
+      headers:{'Content-Type':state.file.type,'X-Image-Filename':state.file.name,
+        'X-Skin-Consent':'yes','X-Demo-Access':state.code},
+      body:state.file
+    });
+    let data;
+    try{data=await response.json();}catch{throw Error('The server returned an unreadable response. Check with the project owner before sending the photo again.');}
+    if(!response.ok)throw Error(data.error||'Could not start the YouCam scan.');
+    if(!data.receipt)throw Error('The provider task was started but no recovery receipt was returned. Contact the owner before resubmitting the photo.');
+    savePendingScan({receipt:data.receipt,createdAt:Date.now()});
+    notice('The task started. Your private recovery receipt is saved for this tab. No second upload is needed.');
+  }catch(error){notice(error?.message||'The scan could not start. No sample result was substituted.',true);}
+  finally{state.busy=false;renderScan();drawMessage();}
+  if(state.pending)await resumePendingScan();
+}
 
 document.addEventListener('click',event=>{const tab=event.target.closest('[data-tab]');if(tab)return navigate(tab.dataset.tab);const nav=event.target.closest('[data-go]');if(nav)return navigate(nav.dataset.go);const remove=event.target.closest('[data-remove]');if(remove){state.shelf=state.shelf.filter(x=>x.id!==remove.dataset.remove);state.sampleInventory=false;persist();renderShelf(decide());return;}
- if(event.target.closest('#sample-report'))return setSample();if(event.target.closest('#live-scan'))return void scanLive();if(event.target.closest('#reset-shelf')){state.shelf=sampleShelf.map(x=>({...x}));state.sampleInventory=true;persist();renderShelf(decide());return;}
+ if(event.target.closest('#sample-report'))return setSample();if(event.target.closest('#live-scan'))return void scanLive();if(event.target.closest('#resume-scan'))return void resumePendingScan();if(event.target.closest('#forget-scan')){if(state.busy)return;savePendingScan(null);renderScan();notice('Saved scan reference discarded. This does not cancel a task already running at Perfect Corp.');return;}if(event.target.closest('#reset-shelf')){state.shelf=sampleShelf.map(x=>({...x}));state.sampleInventory=true;persist();renderShelf(decide());return;}
  if(event.target.closest('#clear-shelf')){state.shelf=[];state.sampleInventory=false;persist();renderShelf(decide());return;}
  const cart=event.target.closest('[data-cart]');if(cart){state.cartIds=state.cartIds.includes(cart.dataset.cart)?state.cartIds.filter(x=>x!==cart.dataset.cart):[...state.cartIds,cart.dataset.cart];renderShop(decide());return;}
  if(event.target.closest('#cart-auto')){state.cartIds=decide().cartIds;renderShop(decide());return;}
