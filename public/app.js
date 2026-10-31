@@ -5,6 +5,7 @@ import {makeShelfBackup,readShelfBackup,SHELF_BACKUP_MAX_BYTES,SHELF_LIMIT,shelf
 import {BASIC_STEPS,ALL_STEPS,makeInsights,evaluateBudgetScenario} from '/insights.js';
 import {COMPARE_KEY,MAX_COMPARE,COMPARE_FILTER_STEPS,normalizeCompareIds,toggleCompareId,buildComparison,filterComparisonCandidates} from '/comparison.js';
 import {WORKSPACE_PAGES,parseWorkspaceHash,workspaceHash,searchWorkspace} from '/workspace-search.js';
+import {DATA_GROUPS,ERASE_CATEGORIES,describeDataState,readStoragePresence,eraseOwnedStorage} from '/data-center.js';
 import {planLocalPhoto,preparePhotoLocally,PHOTO_SOURCE_MAX_BYTES} from '/photo-tools.js';
 import {createDecisionBrief} from '/report-export.js';
 import {makePrivateReport,readPrivateReport,LIVE_REPORT_SESSION_KEY} from '/report-session.js';
@@ -60,8 +61,8 @@ function syncWorkspaceLocation(){
 }
 window.addEventListener('popstate',syncWorkspaceLocation);
 window.addEventListener('hashchange',syncWorkspaceLocation);
-function render(){document.querySelectorAll('.view').forEach(el=>el.classList.toggle('hidden',el.id!==`view-${state.tab}`));document.querySelectorAll('.nav-link').forEach(el=>{const active=el.dataset.tab===state.tab;el.classList.toggle('active',active);if(active)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});$('#crumb-page').textContent=({overview:'Overview',scan:'Skin analysis',shelf:'My shelf',routine:'Routine planner',insights:'My insights',shop:'Shopping studio',compare:'Compare lab',trail:'Decision trail'})[state.tab];
-  const d=decide();const titles={overview:renderOverview,scan:renderScan,shelf:renderShelf,routine:renderRoutine,insights:renderInsights,shop:renderShop,compare:renderCompare,trail:renderTrail};titles[state.tab](d);drawMessage();$('#provider-chip').textContent=state.liveEnabled?'● YouCam API key authenticated':state.providerConnection==='failed'?'● YouCam authentication failed':state.providerConnection==='checking'?'● Checking YouCam credentials':'● Sample mode available';
+function render(){document.querySelectorAll('.view').forEach(el=>el.classList.toggle('hidden',el.id!==`view-${state.tab}`));document.querySelectorAll('.nav-link').forEach(el=>{const active=el.dataset.tab===state.tab;el.classList.toggle('active',active);if(active)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});$('#crumb-page').textContent=({overview:'Overview',scan:'Skin analysis',shelf:'My shelf',routine:'Routine planner',insights:'My insights',shop:'Shopping studio',compare:'Compare lab',trail:'Decision trail',privacy:'Privacy & data'})[state.tab];
+  const d=decide();const titles={overview:renderOverview,scan:renderScan,shelf:renderShelf,routine:renderRoutine,insights:renderInsights,shop:renderShop,compare:renderCompare,trail:renderTrail,privacy:renderPrivacy};titles[state.tab](d);drawMessage();$('#provider-chip').textContent=state.liveEnabled?'● YouCam API key authenticated':state.providerConnection==='failed'?'● YouCam authentication failed':state.providerConnection==='checking'?'● Checking YouCam credentials':'● Sample mode available';
 }
 const title=(eyebrow,h1,subtitle)=>`<div class="page-heading"><div class="eyebrow">${eyebrow}</div><h1>${h1}</h1><p>${subtitle}</p></div>`;
 function renderWorkspaceHub(d) {
