@@ -41,7 +41,7 @@ test('help is searchable locally by problem, synonym, question, and answer',()=>
  assert.ok(filterHelp('passcode').some(x=>x.id==='passcode'));
  assert.ok(filterHelp('480').some(x=>x.id==='specs'));
  assert.ok(filterHelp('nonexistent invented term zyxwvu').length===0);
- assert.equal(filterHelp(''),HELP_ARTICLES.length);
+ assert.equal(filterHelp('').length,HELP_ARTICLES.length);
 });
 test('category selection and result caps are bounded, case-insensitive and safe',()=>{
  const scans=filterHelp('photo','scan');
@@ -107,7 +107,7 @@ test('help descriptions never claim live checkout, medical diagnosis or provider
  const byId=id=>HELP_ARTICLES.find(x=>x.id===id)?.answer||'';
  assert.match(byId('fake-products'),/fictional/);
  assert.match(byId('provider-delete'),/No/);
- assert.match(byId('key-state'),/not a completed scan/i);
+ assert.match(byId('key-state'),/Only a completed provider response/i);
  assert.match(byId('face-quality'),/self-reported/i);
  assert.match(byId('passcode'),/protected/i);
  assert.match(byId('erase'),/does not delete/i);
