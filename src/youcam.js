@@ -9,6 +9,18 @@ async function api(path,init={}){
   if(!response.ok){if(response.status===401||response.status===403)throw new YouCamError('YouCam authorization failed. Verify the API key and credits.',503);if(response.status===429)throw new YouCamError('YouCam rate limit reached. Try later.',429);throw new YouCamError('YouCam rejected the request. Please verify the input and provider account.',502);}
   try{return await response.json()}catch{throw new YouCamError('Unexpected YouCam response.');}
 }
+/**
+ * Zero-credit authentication preflight via Perfect Corp's documented credit endpoint.
+ * This never uploads a photo, creates a skin-analysis task, or spends scan credits.
+ */
+export async function verifyYouCamAccess() {
+  const data = await api('/s2s/v1.0/client/credit', { method: 'GET' });
+  if (!Array.isArray(data?.results)) {
+    throw new YouCamError('YouCam credit API returned an unexpected response.');
+  }
+  return { authenticated: true };
+}
+
 function signedUploadUrl(url){
   const target=new URL(url);
   // Never upload user photos to a host controlled by an untrusted response.

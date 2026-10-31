@@ -56,7 +56,7 @@ PUBLIC_ORIGIN=https://your-production-domain.example
 
 - `POST /api/scan`: content-type `image/jpeg|image/png`, raw binary image body (max 8MB), `X-Image-Filename`, `X-Skin-Consent: yes`, `X-Demo-Access` header.
 - `GET /api/scan/status?task_id=...`: `X-Demo-Access` header.
-- `GET /api/status`: only exposes configuration readiness, never secret values or claims of completed live calls.
+- `GET /api/status`: exposes configuration readiness **and a separate upstream authentication preflight result** (`providerConnection: authenticated | checking | failed | disabled`). On each server boot, when live scans are configured, the server calls Perfect Corp's documented `GET /s2s/v1.0/client/credit` endpoint **once, for free**, to verify its API key without submitting a skin-analysis task. This does **not** prove that an actual face scan works. No secrets or provider balance amounts appear in public status.
 - File metadata: `POST https://yce-api-01.makeupar.com/s2s/v2.0/file`, then signed S3 PUT.
 - Start scan: `POST /s2s/v2.0/task/skin-analysis` with `src_file_id`, SD `dst_actions`, `format: json`.
 - Poll: `GET /s2s/v2.0/task/skin-analysis/{task_id}`.
