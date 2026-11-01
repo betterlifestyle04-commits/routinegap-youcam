@@ -1087,3 +1087,16 @@ body.is-preference-open{overflow:hidden}
 @media(max-width:410px){.scenario-case-grid{gap:7px}.scenario-case-card{min-height:157px;padding:12px;gap:10px}.scenario-case-card>strong{font-size:17px}.scenario-case-card>small{font-size:9px}.scenario-shelf-item{min-width:100%}.scenario-case-metrics{grid-template-columns:repeat(3,1fr);gap:4px;padding:12px}.scenario-case-metrics strong{font-size:23px}.scenario-case-metrics span{font-size:9px}.scenario-budget-actions button{padding:9px 10px}}
 @media(prefers-reduced-motion:reduce){.scenario-case-card,.scenario-budget-actions button{transition:none}}
 @media print{.scenario-budget-actions,.scenario-actions,.scenario-case-grid{display:none!important}}
+
+
+/* Judge-access panel: public live trial without disclosing a private owner secret */
+.judge-access-panel{border:1px solid #d4e4cf;background:linear-gradient(130deg,#f0f8eb,#fbfcf7);padding:18px 19px;margin-top:15px;border-radius:14px}
+.judge-access-panel>.eyebrow{letter-spacing:1px;color:#638467}
+.judge-access-panel>strong{display:block;margin:9px 0 7px;font:normal clamp(16px,1.7vw,20px)/1.35 Georgia,serif;color:#2c5d40}
+.judge-access-panel>p{margin:0;font-size:11px;line-height:1.65;color:#719077}
+.owner-access-details{margin-top:13px;border-top:1px solid #d9e5d3;padding-top:12px}
+.owner-access-details summary{cursor:pointer;font-size:11px;font-weight:800;color:#3a7250}
+.owner-access-details summary:focus-visible{outline:3px solid #7db18a;outline-offset:3px}
+.owner-access-details .field{margin-top:14px}
+.owner-access-details p{color:#7b8d7c;font-size:10px;line-height:1.5}
+@media(max-width:650px){.judge-access-panel{padding:14px 13px}.judge-access-panel>strong{font-size:18px}}
