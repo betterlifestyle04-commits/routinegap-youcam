@@ -16,9 +16,11 @@ const api='https://yce-api-01.makeupar.com';
 
 test('complete HTTP contract: auth → consented upload → signed S3 PUT → task → receipt polling → real-labeled normalized report',async()=>{
   const originalFetch=globalThis.fetch;
-  const oldEnv=Object.fromEntries(['YOUCAM_API_KEY','DEMO_ACCESS_TOKEN','LIVE_SCANS_ENABLED','NODE_ENV'].map(k=>[k,process.env[k]]));
+  const oldEnv=Object.fromEntries(['YOUCAM_API_KEY','DEMO_ACCESS_TOKEN','LIVE_SCANS_ENABLED','PUBLIC_JUDGE_SCANS_ENABLED','NODE_ENV'].map(k=>[k,process.env[k]]));
   process.env.NODE_ENV='test';process.env.YOUCAM_API_KEY='mock-api-key';
   process.env.DEMO_ACCESS_TOKEN='private-test-passcode-12345';process.env.LIVE_SCANS_ENABLED='true';
+  // Contract test asserts private-only rejection; override public mode even when Render builds with PUBLIC_JUDGE_SCANS_ENABLED=true.
+  process.env.PUBLIC_JUDGE_SCANS_ENABLED='false';
   const upstream=[];
   let statusCalls=0,base;
   try{
