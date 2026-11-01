@@ -223,7 +223,7 @@ try{
  assert.ok((await desktop.locator('.scenario-comparison-pane.after').innerText()).includes('No essential concept selected'));
  await desktop.locator('[data-scenario-case="missing-spf"]').click();
  await shown(desktop,'#scenario-choice-missing-spf[aria-pressed="true"]');
- assert.ok((await desktop.locator('.scenario-comparison-pane.after').innerText()).includes('sunscreen'));
+ assert.ok((await desktop.locator('.scenario-comparison-pane.after').innerText()).includes('Daily SPF'));
  await desktop.locator('[data-scenario-case-budget="25"]').click();
  await shown(desktop,'#scenario-budget-25[aria-pressed="true"]');
  await desktop.locator('[data-scenario-case-budget="100"]').click();
