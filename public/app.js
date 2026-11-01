@@ -12,6 +12,7 @@ import {TOUR_STEPS,tourSummary,moveTour} from '/product-tour.js';
 import {HELP_ARTICLES,HELP_CATEGORIES,filterHelp,helpCategoryCounts,contextualHelp,validHelpTab} from '/help-center.js';
 import {PREF_STAGES,DEMO_BUDGETS,normalizePreferenceDraft,modifyPreferenceDraft,preferencePreview,stepPreferenceStage,differentPreferences} from '/preference-studio.js';
 import {UNCERTAIN_SCAN_KEY,newUncertainMarker,readUncertainMarker,classifyStartResponse,scanJourney} from '/scan-journey.js';
+import {SCENARIOS,getScenario,scenarioPreview,scenarioBudgetPreset,scenarioCaseSummary} from '/scenario-lab.js';
 import {planLocalPhoto,preparePhotoLocally,PHOTO_SOURCE_MAX_BYTES} from '/photo-tools.js';
 import {SELF_CHECKS,toggleSelfCheck,photoReadiness} from '/photo-readiness.js';
 import {createDecisionBrief} from '/report-export.js';
@@ -65,7 +66,7 @@ function saveUncertainSubmission(marker){
   return false;
  }
 }
-const state={scanPhase:'idle',scanPoll:0,uncertainSubmission:readUncertainSubmission(),preferenceStudio:null,helpQuery:'',helpCategory:'all',productTour:null,photoSelfChecks:{},storyId:null,tab:parseWorkspaceHash(window.location.hash)||'overview',globalSearchQuery:'',compareIds:(()=>{try{return normalizeCompareIds(localStorage.getItem(COMPARE_KEY),catalog);}catch{return [];}})(),compareQuery:'',compareStep:'all',insightBudget:null,shelfQuery:'',editingId:null,undoShelf:null,savedIds:(()=>{try{return normalizeSavedConcepts(localStorage.getItem(SAVED_CONCEPTS_KEY),catalog);}catch{return [];}})(),catalogQuery:'',catalogStep:'all',catalogDecision:'all',catalogSort:'recommended',savedOnly:false,affordableOnly:false,routineLog:(()=>{try{return localStorage.getItem(ROUTINE_LOG_KEY);}catch{return null;}})(),shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:savedLiveReport?.signals||null,scanSource:savedLiveReport?'live':null,savedLiveReport:!!savedLiveReport,cartIds:[],file:null,sourceFile:null,preview:null,imageReady:false,imageDimensions:null,canPrepare:false,preparing:false,photoPlan:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false,goalFromScan:null};
+const state={scanPhase:'idle',scanPoll:0,uncertainSubmission:readUncertainSubmission(),preferenceStudio:null,helpQuery:'',helpCategory:'all',productTour:null,photoSelfChecks:{},storyId:null,tab:parseWorkspaceHash(window.location.hash)||'overview',globalSearchQuery:'',compareIds:(()=>{try{return normalizeCompareIds(localStorage.getItem(COMPARE_KEY),catalog);}catch{return [];}})(),compareQuery:'',compareStep:'all',insightBudget:null,scenarioCaseId:'missing-spf',scenarioCaseBudget:null,shelfQuery:'',editingId:null,undoShelf:null,savedIds:(()=>{try{return normalizeSavedConcepts(localStorage.getItem(SAVED_CONCEPTS_KEY),catalog);}catch{return [];}})(),catalogQuery:'',catalogStep:'all',catalogDecision:'all',catalogSort:'recommended',savedOnly:false,affordableOnly:false,routineLog:(()=>{try{return localStorage.getItem(ROUTINE_LOG_KEY);}catch{return null;}})(),shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:savedLiveReport?.signals||null,scanSource:savedLiveReport?'live':null,savedLiveReport:!!savedLiveReport,cartIds:[],file:null,sourceFile:null,preview:null,imageReady:false,imageDimensions:null,canPrepare:false,preparing:false,photoPlan:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false,goalFromScan:null};
 try{const saved=JSON.parse(localStorage.getItem('routinegap_state')||'null');if(saved&&typeof saved==='object'){
   state.shelf=normalizeShelf(saved.shelf);state.budget=Number.isFinite(saved.budget)?Math.max(0,Math.min(1000,saved.budget)):60;state.goal=goals.some(g=>g.id===saved.goal)?saved.goal:'moisture';state.fragranceFree=saved.fragranceFree===true;state.sampleInventory=saved.sampleInventory===true;
 }}catch{}
@@ -314,6 +315,7 @@ ${renderWorkspaceHub(d)}
     <button type="button" data-go="trail"><b>06</b><strong>Export the rationale</strong><span>Save a private decision brief</span></button>
   </div>
 </section>
+<div class="scenario-overview-card"><div><div class="eyebrow">EXPLORE FOUR FICTIONAL EXAMPLES</div><h2>See what changes when you know your shelf.</h2><p>Compare transparent before-and-after fictional routines, see exactly why example products were excluded and try several budgets—without touching your own data or using YouCam credits.</p></div><button type="button" class="primary" data-go="insights">Open Scenario Lab →</button></div>
 <div class="insights-overview-card"><div><div class="eyebrow">NEW · YOUR INSIGHTS</div><h2>See your routine and spending picture.</h2><p>Understand your basic step coverage, the price of products you recorded, and how different demo budgets change your suggested plan.</p></div><button class="secondary" data-go="insights">Explore my insights →</button></div>
 <div class="privacy-overview-bridge"><div><div class="eyebrow">PRIVACY · UNDER YOUR CONTROL</div><h2>Know what your browser remembers.</h2><p>Review stored data, export your shelf and clear records you no longer need.</p></div><button class="secondary" data-go="privacy">Open Privacy & Data →</button></div>
 <div class="routine-overview-callout"><div><div class="eyebrow">NEW · DAILY ROUTINE PLANNER</div><h2>From your shelf to your everyday routine.</h2><p>Make a morning and evening checklist from what you own. Only your own checkmarks count, not illustrative sample items.</p></div><button class="primary" data-go="routine">Open routine planner →</button></div>
@@ -647,6 +649,67 @@ function renderScenario(snapshot) {
  `<p class="insights-positive-reminder">${scenario.noNewPurchase?'No new essentials suggested.':'The example budget can accommodate a concept for each missing essential step.'}</p>`}
  <div class="insights-scenario-footer"><p>This scenario does not change your shopping budget, saved board, real inventory, or demo cart.</p><button class="tiny-btn" data-go="shop">Open shopping studio ↗</button></div>`;
 }
+function renderScenarioLab(){
+ const el=$('#scenario-lab-content');if(!el)return;
+ const selected=getScenario(state.scenarioCaseId);
+ const d=scenarioPreview(selected.id,{budget:state.scenarioCaseBudget});
+ const cards=SCENARIOS.map(c=>`<button type="button" class="scenario-case-card ${c.id===d.id?'active':''}" id="scenario-choice-${c.id}" data-scenario-case="${c.id}" aria-pressed="${c.id===d.id}">
+   <span class="scenario-case-top"><b>${escape(c.index)} / CASE</b><span aria-hidden="true">${escape(c.icon)}</span></span>
+   <strong>${escape(c.label)}</strong><small>${escape(c.short)}</small>
+   <span class="scenario-case-tag">${escape(c.tag)}</span>
+ </button>`).join('');
+ const listed=(items,empty)=>items.length?items.map(x=>`<div class="scenario-result-item"><span><strong>${escape(x.name)}</strong><small>${escape(x.label)} · Example only</small></span><b>${money(x.price)}</b></div>`).join(''):`<div class="scenario-result-empty"><span aria-hidden="true">✓</span><p>${escape(empty)}</p></div>`;
+ const shelf=d.scenarioOwned.length?d.scenarioOwned.map(item=>`<div class="scenario-shelf-item"><span aria-hidden="true">▧</span><span><strong>${escape(item.name)}</strong><small>${escape(item.label)} · Fictional owned example</small></span></div>`).join(''):'<p class="scenario-no-shelf">This case intentionally contains no entered products. It does not represent your real shelf.</p>';
+ const presets=[25,50,75,100].map(n=>`<button type="button" id="scenario-budget-${n}" data-scenario-case-budget="${n}" aria-pressed="${d.budget===n}">${money(n)}</button>`).join('');
+ const caption=d.cartDifference===0?'No change in illustrative proposed cart value.':`The illustrative proposed cart value changes by ${money(Math.abs(d.cartDifference))} ${d.cartDifference>0?'less':'more'} when the fictional shelf is considered. This is not money actually saved or spent.`;
+ el.innerHTML=`<div class="scenario-case-grid" role="group" aria-label="Choose a fictional skincare example">${cards}</div>
+ <div class="scenario-detail" role="region" aria-label="${escape(d.label)} simulated decisions">
+ <div class="scenario-detail-head"><div><div class="eyebrow">CASE STUDY · FICTIONAL DATA</div><h3>${escape(d.headline)}</h3><p>${escape(d.story)}</p></div>
+ <span class="scenario-sim-pill">DETERMINISTIC DEMO · NO LIVE SCAN</span></div>
+ <div class="scenario-budget-bar"><div><strong>Try a different example budget</strong><span>${escape(goals.find(g=>g.id===d.selectedGoal)?.name||'Simple routine')} goal · ${d.fragranceFree?'Fragrance-free concept tags':'All concept tags'} · USD example prices</span></div>
+ <div class="scenario-budget-actions">${presets}<button type="button" id="scenario-case-reset">Default ${money(selected.budget)}</button></div></div>
+ <div class="scenario-data-grid">
+  <div class="scenario-case-shelf"><div class="eyebrow">WHAT THE FICTIONAL PERSON ALREADY RECORDED</div><strong>${d.ownedCount} example products · ${d.coveredCount}/3 basic categories</strong>
+   <div class="scenario-shelf-list">${shelf}</div>
+   <div class="scenario-category-chips">${['cleanser','moisturizer','spf'].map(step=>`<span class="${d.covered.includes(step)?'covered':'gap'}">${d.covered.includes(step)?'✓ ':'· '}${escape(stepLabels[step])}</span>`).join('')}</div>
+  </div>
+  <div class="scenario-case-metrics">
+   <div><span>Concepts available with tag filters</span><strong>${d.taggedConcepts}</strong><small>Fictional catalog entries</small></div>
+   <div><span>Example overlap flags</span><strong>${d.overlapFlags}</strong><small>Same routine step, not real duplicates</small></div>
+   <div><span>Basic categories not recorded</span><strong>${d.missing.length}</strong><small>No purchase is required</small></div>
+  </div>
+ </div>
+ <div class="scenario-comparison" aria-label="Before and after entering the fictional shelf">
+  <section class="scenario-comparison-pane before"><div class="scenario-comparison-head"><span class="eyebrow">BEFORE · NO SHELF RECORDED</span><h4>Without owned-product context</h4>
+   <p>The same fictional budget and preferences, with an empty inventory.</p>
+   <div class="scenario-cart-metric"><strong>${money(d.before.total)}</strong><span>${d.before.count} illustrative selected concepts</span></div></div>
+   <div class="scenario-result-list">${listed(d.before.shortlist,'No essential concept selected under this example budget.')}</div></section>
+  <section class="scenario-comparison-pane after"><div class="scenario-comparison-head"><span class="eyebrow">AFTER · FICTIONAL SHELF ENTERED</span><h4>With recorded routine categories</h4>
+   <p>Exactly the same budget and preferences, now accounting for the example shelf.</p>
+   <div class="scenario-cart-metric"><strong>${money(d.after.total)}</strong><span>${d.after.count} illustrative selected concepts</span></div></div>
+   <div class="scenario-result-list">${listed(d.after.shortlist,'No essential concept selected; no purchase is required by these rules.')}</div></section>
+ </div>
+ <div class="scenario-conclusion"><span class="scenario-conclusion-icon" aria-hidden="true">✦</span><div><strong>What this case illustrates</strong><p>${escape(d.takeaway)}</p><p>${escape(caption)}</p>
+ <p>${escape(d.provenance)} ${escape(d.constraints)}</p></div></div>
+ <div class="scenario-actions"><button type="button" class="secondary" id="scenario-case-export">Export fictional case notes ↓</button><button type="button" class="secondary" data-go="shelf">Record my real products →</button>
+ <small>Exports include example information only—never your shelf, image, report, passcode or scan receipt.</small></div>
+ </div>`;
+}
+function downloadScenarioCase(){
+ const d=getScenario(state.scenarioCaseId);
+ const report=scenarioCaseSummary(d.id,{budget:state.scenarioCaseBudget});
+ try{
+  const blob=new Blob([report],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');
+  link.href=url;link.download='routinegap-fictional-case-'+d.id+'.txt';
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  notice('Fictional case notes exported locally. No real customer, photo, scan, or private shelf data was included.');
+ }catch{
+  notice('Could not export example notes in this browser.',true);
+ }
+}
 function renderInsights() {
  const snapshot=makeInsights({shelf:state.shelf,sampleInventory:state.sampleInventory,budget:state.budget,goal:state.goal,fragranceFree:state.fragranceFree,cartIds:state.cartIds,savedIds:state.savedIds});
  const total=snapshot.ownedCount;
@@ -688,8 +751,10 @@ function renderInsights() {
  <button type="button" class="tiny-btn" id="insights-budget-reset">Use my ${money(snapshot.decision.budget)} budget</button></div>
  <p class="muted small">This is a simple category/price thought experiment, not a prediction of savings, results or actual merchant availability.</p></div>
  <div class="insights-scenario" id="insights-scenario" aria-live="polite"></div></div></div>
+ <section class="scenario-lab" id="scenario-lab" aria-labelledby="scenario-lab-heading"><div class="scenario-lab-heading"><div><span class="eyebrow">EXPLORE THE DECISION ENGINE · FICTIONAL DATA ONLY</span><h2 id="scenario-lab-heading">Real logic. <em>Illustrative lives.</em></h2><p>Four fictional skincare situations show how entering owned products changes an essentials-first shortlist. Select a case, vary the budget and inspect the rule-driven difference. Your actual shelf, preferences and cart remain untouched.</p></div><span class="scenario-lab-count">04 EXAMPLE JOURNEYS</span></div><div id="scenario-lab-content"></div></section>
  <section class="insights-explain"><div><div class="eyebrow">TRANSPARENCY MATTERS</div><h2>Know what these numbers can—and cannot—tell you.</h2><p>These snapshots do not estimate skincare effectiveness, allergy safety, real-world spending, behavioral adherence, or improvement over time. Scan scores, if available, are vendor cosmetic observations and are not used to infer clinical outcomes or purchases.</p></div><button class="secondary" data-go="trail">Inspect decision logic →</button></section>`;
  renderScenario(snapshot);
+ renderScenarioLab();
 }
 function renderComparePicker(){
   const all=filterComparisonCandidates(catalog,{query:state.compareQuery,step:state.compareStep});
@@ -1240,6 +1305,12 @@ document.addEventListener('keydown',event=>{
 });
 window.addEventListener('resize',()=>{if(window.innerWidth>760)closeMobileMore({restoreFocus:false});});
 document.addEventListener('click',event=>{
+ const caseSelect=event.target.closest('[data-scenario-case]');
+ if(caseSelect){state.scenarioCaseId=getScenario(caseSelect.dataset.scenarioCase).id;state.scenarioCaseBudget=null;renderScenarioLab();$('#scenario-choice-'+state.scenarioCaseId)?.focus({preventScroll:true});return;}
+ const caseBudget=event.target.closest('[data-scenario-case-budget]');
+ if(caseBudget){const amount=scenarioBudgetPreset(caseBudget.dataset.scenarioCaseBudget);if(amount===null)return;state.scenarioCaseBudget=amount;renderScenarioLab();$('#scenario-budget-'+amount)?.focus({preventScroll:true});return;}
+ if(event.target.closest('#scenario-case-reset')){state.scenarioCaseBudget=null;renderScenarioLab();$('#scenario-case-reset')?.focus({preventScroll:true});return;}
+ if(event.target.closest('#scenario-case-export')){downloadScenarioCase();return;}
  if(event.target.closest('#launch-preference-studio')||event.target.closest('#shop-preference-studio')){openPreferenceStudio();return;}
  if(event.target.closest('#preference-close')||event.target.closest('[data-preference-close]')){closePreferenceStudio();return;}
  const selectedGoal=event.target.closest('[data-pref-goal]');if(selectedGoal){if(!state.preferenceStudio)return;state.preferenceStudio.draft=modifyPreferenceDraft(state.preferenceStudio.draft,{goal:selectedGoal.dataset.prefGoal});renderPreferenceStudio();return;}
