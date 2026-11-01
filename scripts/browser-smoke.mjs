@@ -262,6 +262,8 @@ try{
  await mobile.locator('[data-scenario-case="tag-preference"]').click();
  await shown(mobile,'#scenario-choice-tag-preference[aria-pressed="true"]');
  await mobile.screenshot({path:'artifacts/browser/mobile-scenario-lab.png',fullPage:true});
+ await mobile.goto(base+'/#/overview',{waitUntil:'networkidle'});
+ await shown(mobile,'#view-overview:not(.hidden) #launch-preference-studio');
 
 
  await mobile.locator('#launch-preference-studio').click();
