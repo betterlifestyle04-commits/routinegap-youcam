@@ -209,6 +209,36 @@ try{
  assert.deepEqual(completedErrors,[]);
  await completed.close();
 
+ // Scenario Lab: four fictional cases share the actual recommendation rules
+ // without changing a visitor's owned shelf, preferences or demo cart.
+ await desktop.goto(base+'/#/insights',{waitUntil:'networkidle'});
+ await shown(desktop,'#scenario-lab .scenario-case-grid');
+ const priorStorage=await desktop.evaluate(()=>({
+  local:Object.fromEntries(Object.entries(localStorage).sort()),
+  session:Object.fromEntries(Object.entries(sessionStorage).sort())
+ }));
+ assert.equal(await desktop.locator('[data-scenario-case]').count(),4);
+ await desktop.locator('[data-scenario-case="fully-covered"]').click();
+ await shown(desktop,'#scenario-choice-fully-covered[aria-pressed="true"]');
+ assert.ok((await desktop.locator('.scenario-comparison-pane.after').innerText()).includes('No essential concept selected'));
+ await desktop.locator('[data-scenario-case="missing-spf"]').click();
+ await shown(desktop,'#scenario-choice-missing-spf[aria-pressed="true"]');
+ assert.ok((await desktop.locator('.scenario-comparison-pane.after').innerText()).includes('sunscreen'));
+ await desktop.locator('[data-scenario-case-budget="25"]').click();
+ await shown(desktop,'#scenario-budget-25[aria-pressed="true"]');
+ await desktop.locator('[data-scenario-case-budget="100"]').click();
+ await shown(desktop,'#scenario-budget-100[aria-pressed="true"]');
+ const [caseNotes]=await Promise.all([
+  desktop.waitForEvent('download'),
+  desktop.locator('#scenario-case-export').click()
+ ]);
+ assert.ok(caseNotes.suggestedFilename().startsWith('routinegap-fictional-case-'));
+ const afterStorage=await desktop.evaluate(()=>({
+  local:Object.fromEntries(Object.entries(localStorage).sort()),
+  session:Object.fromEntries(Object.entries(sessionStorage).sort())
+ }));
+ assert.deepEqual(afterStorage,priorStorage,'Scenario Lab must not alter actual customer browser data');
+ await desktop.screenshot({path:'artifacts/browser/desktop-scenario-lab.png',fullPage:true});
  const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
  monitor(mobile);
  await mobile.goto(base+'/#/overview',{waitUntil:'networkidle'});
@@ -227,6 +257,12 @@ try{
  await mobile.locator('#mobile-dock [data-mobile-tab="overview"]').click();
  await shown(mobile,'#view-overview:not(.hidden)');
  await mobile.screenshot({path:'artifacts/browser/mobile-overview.png',fullPage:true});
+ await mobile.goto(base+'/#/insights',{waitUntil:'networkidle'});
+ await shown(mobile,'#scenario-lab .scenario-case-grid');
+ await mobile.locator('[data-scenario-case="tag-preference"]').click();
+ await shown(mobile,'#scenario-choice-tag-preference[aria-pressed="true"]');
+ await mobile.screenshot({path:'artifacts/browser/mobile-scenario-lab.png',fullPage:true});
+
 
  await mobile.locator('#launch-preference-studio').click();
  await shown(mobile,'#preference-overlay:not([hidden])');
@@ -238,7 +274,7 @@ try{
 
  assert.deepEqual(providerCalls,[],'Tour and Help must never submit a scan');
  assert.deepEqual(errors,[],'No client-side JavaScript exceptions are allowed');
- console.log('Chromium smoke passed: 10-section navigation, 33 FAQs, article search, demo scan, six-stop tour, global search, mobile dock, preference save/cancel, scan recovery/erasure, intercepted synthetic task success/failure and no paid provider calls.');
+ console.log('Chromium smoke passed: 10-section navigation, 33 FAQs, article search, demo scan, six-stop tour, global search, mobile dock, preference save/cancel, scan recovery/erasure, intercepted synthetic task success/failure, four-case Scenario Lab, immutable local data and no paid provider calls.');
 }finally{
  if(browser)await browser.close();
  server.kill('SIGTERM');
