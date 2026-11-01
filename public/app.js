@@ -1003,7 +1003,7 @@ async function resumePendingScan(){
   if(state.busy)return;
   if(!state.pending)return notice('There is no saved scan to resume.',true);
   if(!state.liveEnabled)return notice('YouCam is not currently connected. Your pending session was not discarded.',true);
-  if(!state.code)return notice('Enter your private demo passcode to resume the existing scan.',true);
+  // The opaque signed receipt is sufficient for status recovery; do not require a separate passcode.
   state.busy=true;state.scanPhase='processing';state.scanPoll=0;state.scan=null;state.scanSource=null;renderScan();
   notice('Resuming your existing YouCam task without re-uploading the photo or starting another paid request.');
   try{
