@@ -100,7 +100,7 @@ test('profile exports are authored, non-sensitive and contain honest provenance'
  assert.match(report,/before|without the example shelf/i);
  assert.match(report,/with the example shelf/i);
  assert.match(report,/not realized savings/i);
- assert.match(report,/not verified/i);
+ assert.match(report,/have been verified/i);
  assert.ok(!report.includes('passcode'));
  assert.ok(!report.includes('routinegap_state'));
  assert.ok(!report.includes('api\/scan'));
