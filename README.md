@@ -2,6 +2,16 @@
 
 A functional skincare shopping-intelligence web app built for the **YouCam API Skin AI & eCommerce VTO Hackathon 2026**. **Don't buy another serum before you check your shelf.**
 
+## Hackathon judge access — passcode-free limited trials
+
+**Site:** https://routinegap-youcam.onrender.com/#/scan
+
+The owner can enable `PUBLIC_JUDGE_SCANS_ENABLED=true` on Render while retaining a private `DEMO_ACCESS_TOKEN` for server-only task receipt signing and optional private testing. A first-time visitor then selects a valid photo, consents to Perfect Corp processing, and clicks **Analyze with YouCam** with no private passcode. The public attempt pool is limited to **three attempts daily** across the running server and **one daily attempt per network source**, with the existing overall server rate limit of two requests/hour/source and 20/day. Invalid image format, photo size, or missing consent is rejected before consuming a guest attempt. Provider status is recovered from a signed expiring receipt without requiring the private code. The illustrative sample remains available at any time without upload or API units.
+
+**Important limitations:** Limits are in-memory, process-scoped, and reset on service restart or redeploy; forwarded IPs aren't proof of identity. These controls reduce accidental costs but are not financial-grade controls, and Perfect Corp billing/account limits must be reviewed separately. Never publicly reveal the real YouCam API key or the owner-only signing secret. Previously exposed provider keys should be revoked and replaced.
+
+**Real integration evidence:** The project owner captured a screenshot labeled "REAL YOUCAM RESULT" with five provider-derived cosmetic observations (pore, texture, redness, oiliness, moisture). This is meaningful evidence of a completed real application result; it is distinct from automated CI tests, which intentionally mock provider responses without spending units. This is not a diagnostic or clinical validation.
+
 ## What works now
 
 - Premium responsive dashboard and navigation
