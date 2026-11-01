@@ -16,6 +16,16 @@ A functional skincare shopping-intelligence web app built for the **YouCam API S
 - No external runtime dependencies; built for Node.js 22 and portable deployment; unit + HTTP smoke tests
 - In-app **photo readiness guide**, including an illustrated good-versus-bad example, exact SD image pixel/file-size requirements, framing and lighting checklist, and validated external editing links. The app checks resolution locally and again on the server **before** contacting YouCam; no AI upscaling or photo submission occurs merely because the user selects a file.
 
+## New: Scenario Lab — real decision logic, four fictional user journeys
+
+The **My Insights** workspace now contains a responsive, interactive Scenario Lab with four explicitly fictional skincare situations: Fresh Start (empty shelf), SPF Gap (cleanser and moisturizer already recorded), Already Covered (all three basic categories entered), and Fragrance-Tag Preference (one recorded cleanser and a concept tag filter). A homepage discovery panel links to the lab.
+
+The lab demonstrates **the same deterministic essentials-first recommendation engine used in the actual Shopping Studio**. Each selectable case shows the fictional starter products and step coverage; an exact side-by-side comparison of *without shelf* vs *with the case's shelf* under the same budget and stated cosmetic focus; number of example concepts filtered as overlaps; and a transparent example shortlist with illustrative USD totals and no actual checkout. Four budget controls let users explore an alternative scenario without changing their real browser-local inventory or preferences. Each case has a written explanation and constraints; a local plain-text export includes **only that authored fictional scenario**, never actual shelf entries, scans, passcodes, provider receipts or user data.
+
+Scenario figures are not real merchant prices, verified savings, longitudinal user behavior or measured efficacy. SPF category names are illustrative and do not imply any sunscreen testing or regulatory certification. The lab cannot diagnose skin or verify product suitability.
+
+Tests verify all fixtures and goal/budget constraints, exact parity with the production recommendation logic across multiple budgets, confidentiality and purity, before/after changes, the absence of provider/network/storage activity, and the responsive markup. A real-Chromium desktop and mobile journey selects cases, compares alternative budgets, exports a fictional note, checks that local and session storage remain unchanged, and archives non-sensitive UI screenshots for visual review. No API credits are used.
+
 ## New: Scan Operations and Recovery Center — honest provider task states
 
 The Skin Analysis workspace now displays a **four-stage scan journey** (photo selected, explicit consent and protected access, receipt-backed task, real provider report). Unlike a generic progress bar, it never invents a provider-completion percentage or confuses API-key authentication with a completed real scan. The panel has distinct states for **sample demo**, **photo prepared locally**, **upload being sent**, **polling an existing task**, **receipt saved**, **real scan finished**, and **submission outcome unknown**.
