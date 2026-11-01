@@ -3,13 +3,17 @@ import {readFile} from 'node:fs/promises';
 import {extname,join,normalize} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {timingSafeEqual} from 'node:crypto';
-import {startYouCamScan,getYouCamScan,verifyYouCamAccess,YouCamError} from './src/youcam.js';
+import {startYouCamScan,getYouCamScan,verifyYouCamAccess,validateYouCamPhoto,YouCamError} from './src/youcam.js';
+import {guestSource,makeGuestQuota} from './src/guest-quota.js';
 import {issueTaskReceipt,readTaskReceipt,TaskReceiptError} from './src/task-receipt.js';
 const root=join(fileURLToPath(new URL('.',import.meta.url)),'public');
 const mimeMap={'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon'};
 const ipHits=new Map();let daily=0,day=new Date().toISOString().slice(0,10);
+const guestQuota=makeGuestQuota();
+const publicGuestEnabled=()=>process.env.PUBLIC_JUDGE_SCANS_ENABLED==='true';
 const MAX_BYTES=8*1024*1024;
 function send(res,status,data,headers={}){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...headers});res.end(JSON.stringify(data));}
+// The server-only signing secret remains mandatory even when visitors need no passcode.
 const ready=()=>process.env.LIVE_SCANS_ENABLED==='true'&&!!process.env.YOUCAM_API_KEY&&!!process.env.DEMO_ACCESS_TOKEN;
 let providerConnection = 'unchecked';
 function access(req){const secret=process.env.DEMO_ACCESS_TOKEN||'',given=req.headers['x-demo-access']||'';if(!secret || typeof given!=='string'||given.length!==secret.length)return false;return timingSafeEqual(Buffer.from(secret),Buffer.from(given));}
@@ -30,29 +34,39 @@ const server=createServer(async(req,res)=>{
     const url=new URL(req.url||'/', 'http://localhost');
     if(req.method==='GET'&&url.pathname==='/api/status')return send(res,200,{
       liveEnabled:ready(),provider:'YouCam Skin Analysis v2.0',
+      guestEnabled:ready()&&publicGuestEnabled(),guestRemaining:ready()&&publicGuestEnabled()?guestQuota.inspect().remaining:0,
       providerConnection:ready()?providerConnection:'disabled',
-      note:!ready()?'Live scans require an API key, demo passcode and explicit enablement.'
+      note:!ready()?'Live scans require an API key, server signing secret and explicit enablement.'
         : providerConnection==='authenticated'?'API key authenticated with free YouCam credit check. No real skin scan has been completed by this check.'
         : providerConnection==='failed'?'Provider authentication check failed. Inspect private Render logs and verify the key.'
         : 'Server configured. Free provider authentication preflight is pending.'
     });
     if(isAPI(req)&&!allowOrigin(req))return send(res,403,{error:'Cross-site API requests are forbidden.'});
     if(isAPI(req)&&!ready())return send(res,503,{error:'Live YouCam scans are not yet enabled. Explore the clearly labeled sample session.'});
-    if(isAPI(req)&&!access(req))return send(res,401,{error:'Valid demo access passcode required for live YouCam requests.'});
     if(req.method==='POST'&&url.pathname==='/api/scan'){
+      const owner=access(req);
+      const supplied=req.headers['x-demo-access'];
+      const guest=publicGuestEnabled()&&!owner&&(supplied===undefined||supplied==='');
+      if(!owner&&!guest)return send(res,401,{error:publicGuestEnabled()?'Invalid owner passcode. Leave the field empty for the limited public judge trial.':'Valid demo access passcode required for live YouCam requests.'});
       // A configured but rejected key must never start a paid scan or use a user's photo.
       if(providerConnection!=='authenticated')return send(res,503,{error:'YouCam API authentication has not succeeded. Replace the key in Render and verify provider status before retrying.'});
       const contentType=(req.headers['content-type']||'').split(';')[0];
       if(!['image/jpeg','image/png'].includes(contentType))return send(res,415,{error:'Upload a JPG or PNG photo.'});
       if(req.headers['x-skin-consent']!=='yes')return send(res,400,{error:'Explicit YouCam photo-sharing consent is required.'});
       const bytes=await readBytes(req,MAX_BYTES);
-      // Invalid formats or missing consent cannot consume scan quota; limit only explicit, valid upload attempts.
+      // Perform all deterministic photo checks before debiting either quota.
+      validateYouCamPhoto({bytes,mime:contentType});
+      if(guest){
+        const quota=guestQuota.consume(guestSource(req));
+        if(!quota.allowed)return send(res,429,{error:quota.reason==='source'?'One no-passcode live scan attempt is allowed per visitor per day. Please use sample mode for additional tests.':'The public judge demo has reached its small daily live-scan limit. Sample mode remains available.'});
+      }
       if(!rateLimit(req))return send(res,429,{error:'Demo scan budget reached (max two per hour per connection; twenty per day total).'});
       const task=await startYouCamScan({bytes,mime:contentType,fileName:req.headers['x-image-filename']||'selfie.jpg'});
       const receipt=issueTaskReceipt(task.taskId,process.env.DEMO_ACCESS_TOKEN);
       return send(res,200,{state:'running',receipt,expiresInHours:24});
     }
     if(req.method==='POST'&&url.pathname==='/api/scan/status'){
+      // A signed, expiring receipt is sufficient for status checks. No owner passcode is needed.
       // Never put a provider task ID in query strings / access logs.
       if((req.headers['content-type']||'').split(';')[0]!=='application/json')
         return send(res,415,{error:'Send the scan receipt as JSON.'});

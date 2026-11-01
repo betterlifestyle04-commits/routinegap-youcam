@@ -59,7 +59,7 @@ function signedUploadHeaders(providerHeaders,mime,bytes){
     throw new YouCamError('YouCam signed upload instructions did not match the image being sent.');
   return {'Content-Type':providerType,'Content-Length':String(bytes)};
 }
-export async function startYouCamScan({bytes,mime,fileName}){
+export function validateYouCamPhoto({bytes,mime}){
   if(!(bytes instanceof Buffer) || bytes.length<1500||bytes.length>8*1024*1024)throw new YouCamError('Upload a JPG or PNG photo under 8 MB.',400);
   if(!['image/jpeg','image/png'].includes(mime))throw new YouCamError('Only JPG or PNG is supported.',400);
   const magicValid=mime==='image/png'?bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])):bytes[0]===0xff&&bytes[1]===0xd8&&bytes[2]===0xff;
@@ -67,6 +67,10 @@ export async function startYouCamScan({bytes,mime,fileName}){
   let dimensions;
   try{dimensions=imageDimensions(bytes,mime);}catch{throw new YouCamError('Image format or dimensions could not be read. Choose a valid JPEG or PNG.',400);}
   if(!validSkinAnalysisDimensions(dimensions))throw new YouCamError(skinDimensionMessage(dimensions),400);
+  return true;
+}
+export async function startYouCamScan({bytes,mime,fileName}){
+  validateYouCamPhoto({bytes,mime});
   const safeName=(fileName||'skin-photo').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,60);
   const upload=await api('/s2s/v2.0/file',{method:'POST',body:JSON.stringify({files:[{content_type:mime,file_name:safeName,file_size:bytes.length}]})});
   const first=upload?.data?.files?.[0], signed=first?.requests?.[0];

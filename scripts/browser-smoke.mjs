@@ -140,7 +140,7 @@ try{
  
  // Isolated synthetic photo + intercepted API responses: this exercises the paid
  // request UI path without transmitting any photo or using real YouCam credits.
- async function fakePhoto(page){
+ async function fakePhoto(page,{ownerCode=true}={}){
   const image=await page.evaluate(()=>{
    const canvas=document.createElement('canvas');
    canvas.width=720;canvas.height=960;
@@ -154,15 +154,41 @@ try{
   await page.locator('#photo-file').setInputFiles({name:'generated-test-pattern.png',mimeType:'image/png',buffer:bytes});
   await shown(page,'#photo-readiness-panel .readiness-pill.ready');
   await page.locator('#consent').check();
-  await page.locator('#demo-passcode').fill('mock-passcode-not-real');
+  if(ownerCode){await page.locator('.owner-access-details summary').click();await page.locator('#demo-passcode').fill('mock-passcode-not-real');}
   await page.locator('#live-scan').waitFor({state:'visible'});
   assert.equal(await page.locator('#live-scan').isDisabled(),false);
  }
- async function mockStatus(page){
+ async function mockStatus(page,{guest=false}={}){
   await page.route('**/api/status',route=>route.fulfill({
-   status:200,contentType:'application/json',body:JSON.stringify({liveEnabled:true,providerConnection:'authenticated'})
+   status:200,contentType:'application/json',body:JSON.stringify({liveEnabled:true,providerConnection:'authenticated',guestEnabled:guest,guestRemaining:guest?3:0})
   }));
  }
+ const judge=await browser.newPage({viewport:{width:1180,height:860}});
+ const judgeErrors=[];judge.on('pageerror',e=>judgeErrors.push(e.message));
+ await mockStatus(judge,{guest:true});
+ let judgeSubmits=0,judgePolled=0,judgeCode='';
+ await judge.route('**/api/scan',route=>{
+  judgeSubmits++;judgeCode=route.request().headers()['x-demo-access']||'';
+  return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({state:'running',receipt:'judge-mock-only-receipt'})});
+ });
+ await judge.route('**/api/scan/status',route=>{
+  judgePolled++;
+  return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({state:'success',
+   signals:[{type:'pore',uiScore:67,rawScore:50},{type:'moisture',uiScore:72,rawScore:45}]})});
+ });
+ await judge.goto(base+'/#/scan',{waitUntil:'networkidle'});
+ await shown(judge,'.judge-access-panel');
+ assert.ok((await judge.locator('.judge-access-panel').innerText()).includes('No passcode needed'));
+ await fakePhoto(judge,{ownerCode:false});
+ assert.equal(await judge.locator('.owner-access-details[open]').count(),0);
+ await judge.locator('#live-scan').click();
+ await shown(judge,'#view-scan:not(.hidden) .scan-journey-chip.success');
+ assert.equal(judgeCode,'','judge test must not send the private owner secret');
+ assert.equal(judgeSubmits,1);
+ assert.equal(judgePolled,1);
+ assert.ok((await judge.locator('#view-scan').innerText()).includes('REAL YOUCAM RESULT'));
+ assert.deepEqual(judgeErrors,[]);
+ await judge.close();
  const uncertain=await browser.newPage({viewport:{width:1180,height:860}});
  const uncertainErrors=[];
  uncertain.on('pageerror',e=>uncertainErrors.push(e.message));
@@ -276,7 +302,7 @@ try{
 
  assert.deepEqual(providerCalls,[],'Tour and Help must never submit a scan');
  assert.deepEqual(errors,[],'No client-side JavaScript exceptions are allowed');
- console.log('Chromium smoke passed: 10-section navigation, 33 FAQs, article search, demo scan, six-stop tour, global search, mobile dock, preference save/cancel, scan recovery/erasure, intercepted synthetic task success/failure, four-case Scenario Lab, immutable local data and no paid provider calls.');
+ console.log('Chromium smoke passed: 10-section navigation, 33 FAQs, article search, demo scan, six-stop tour, global search, mobile dock, preference save/cancel, scan recovery/erasure, intercepted synthetic task success/failure, four-case Scenario Lab, immutable local data and a public judge flow with no passcode and no paid provider calls.');
 }finally{
  if(browser)await browser.close();
  server.kill('SIGTERM');
