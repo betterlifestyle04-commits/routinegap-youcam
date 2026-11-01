@@ -649,6 +649,67 @@ function renderScenario(snapshot) {
  `<p class="insights-positive-reminder">${scenario.noNewPurchase?'No new essentials suggested.':'The example budget can accommodate a concept for each missing essential step.'}</p>`}
  <div class="insights-scenario-footer"><p>This scenario does not change your shopping budget, saved board, real inventory, or demo cart.</p><button class="tiny-btn" data-go="shop">Open shopping studio ↗</button></div>`;
 }
+function renderScenarioLab(){
+ const el=$('#scenario-lab-content');if(!el)return;
+ const selected=getScenario(state.scenarioCaseId);
+ const d=scenarioPreview(selected.id,{budget:state.scenarioCaseBudget});
+ const cards=SCENARIOS.map(c=>`<button type="button" class="scenario-case-card ${c.id===d.id?'active':''}" id="scenario-choice-${c.id}" data-scenario-case="${c.id}" aria-pressed="${c.id===d.id}">
+   <span class="scenario-case-top"><b>${escape(c.index)} / CASE</b><span aria-hidden="true">${escape(c.icon)}</span></span>
+   <strong>${escape(c.label)}</strong><small>${escape(c.short)}</small>
+   <span class="scenario-case-tag">${escape(c.tag)}</span>
+ </button>`).join('');
+ const listed=(items,empty)=>items.length?items.map(x=>`<div class="scenario-result-item"><span><strong>${escape(x.name)}</strong><small>${escape(x.label)} · Example only</small></span><b>${money(x.price)}</b></div>`).join(''):`<div class="scenario-result-empty"><span aria-hidden="true">✓</span><p>${escape(empty)}</p></div>`;
+ const shelf=d.scenarioOwned.length?d.scenarioOwned.map(item=>`<div class="scenario-shelf-item"><span aria-hidden="true">▧</span><span><strong>${escape(item.name)}</strong><small>${escape(item.label)} · Fictional owned example</small></span></div>`).join(''):'<p class="scenario-no-shelf">This case intentionally contains no entered products. It does not represent your real shelf.</p>';
+ const presets=[25,50,75,100].map(n=>`<button type="button" id="scenario-budget-${n}" data-scenario-case-budget="${n}" aria-pressed="${d.budget===n}">${money(n)}</button>`).join('');
+ const caption=d.cartDifference===0?'No change in illustrative proposed cart value.':`The illustrative proposed cart value changes by ${money(Math.abs(d.cartDifference))} ${d.cartDifference>0?'less':'more'} when the fictional shelf is considered. This is not money actually saved or spent.`;
+ el.innerHTML=`<div class="scenario-case-grid" role="group" aria-label="Choose a fictional skincare example">${cards}</div>
+ <div class="scenario-detail" role="region" aria-label="${escape(d.label)} simulated decisions">
+ <div class="scenario-detail-head"><div><div class="eyebrow">CASE STUDY · FICTIONAL DATA</div><h3>${escape(d.headline)}</h3><p>${escape(d.story)}</p></div>
+ <span class="scenario-sim-pill">DETERMINISTIC DEMO · NO LIVE SCAN</span></div>
+ <div class="scenario-budget-bar"><div><strong>Try a different example budget</strong><span>${escape(goals.find(g=>g.id===d.selectedGoal)?.name||'Simple routine')} goal · ${d.fragranceFree?'Fragrance-free concept tags':'All concept tags'} · USD example prices</span></div>
+ <div class="scenario-budget-actions">${presets}<button type="button" id="scenario-case-reset">Default ${money(selected.budget)}</button></div></div>
+ <div class="scenario-data-grid">
+  <div class="scenario-case-shelf"><div class="eyebrow">WHAT THE FICTIONAL PERSON ALREADY RECORDED</div><strong>${d.ownedCount} example products · ${d.coveredCount}/3 basic categories</strong>
+   <div class="scenario-shelf-list">${shelf}</div>
+   <div class="scenario-category-chips">${['cleanser','moisturizer','spf'].map(step=>`<span class="${d.covered.includes(step)?'covered':'gap'}">${d.covered.includes(step)?'✓ ':'· '}${escape(stepLabels[step])}</span>`).join('')}</div>
+  </div>
+  <div class="scenario-case-metrics">
+   <div><span>Concepts available with tag filters</span><strong>${d.taggedConcepts}</strong><small>Fictional catalog entries</small></div>
+   <div><span>Example overlap flags</span><strong>${d.overlapFlags}</strong><small>Same routine step, not real duplicates</small></div>
+   <div><span>Basic categories not recorded</span><strong>${d.missing.length}</strong><small>No purchase is required</small></div>
+  </div>
+ </div>
+ <div class="scenario-comparison" aria-label="Before and after entering the fictional shelf">
+  <section class="scenario-comparison-pane before"><div class="scenario-comparison-head"><span class="eyebrow">BEFORE · NO SHELF RECORDED</span><h4>Without owned-product context</h4>
+   <p>The same fictional budget and preferences, with an empty inventory.</p>
+   <div class="scenario-cart-metric"><strong>${money(d.before.total)}</strong><span>${d.before.count} illustrative selected concepts</span></div></div>
+   <div class="scenario-result-list">${listed(d.before.shortlist,'No essential concept selected under this example budget.')}</div></section>
+  <section class="scenario-comparison-pane after"><div class="scenario-comparison-head"><span class="eyebrow">AFTER · FICTIONAL SHELF ENTERED</span><h4>With recorded routine categories</h4>
+   <p>Exactly the same budget and preferences, now accounting for the example shelf.</p>
+   <div class="scenario-cart-metric"><strong>${money(d.after.total)}</strong><span>${d.after.count} illustrative selected concepts</span></div></div>
+   <div class="scenario-result-list">${listed(d.after.shortlist,'No essential concept selected; no purchase is required by these rules.')}</div></section>
+ </div>
+ <div class="scenario-conclusion"><span class="scenario-conclusion-icon" aria-hidden="true">✦</span><div><strong>What this case illustrates</strong><p>${escape(d.takeaway)}</p><p>${escape(caption)}</p>
+ <p>${escape(d.provenance)} ${escape(d.constraints)}</p></div></div>
+ <div class="scenario-actions"><button type="button" class="secondary" id="scenario-case-export">Export fictional case notes ↓</button><button type="button" class="secondary" data-go="shelf">Record my real products →</button>
+ <small>Exports include example information only—never your shelf, image, report, passcode or scan receipt.</small></div>
+ </div>`;
+}
+function downloadScenarioCase(){
+ const d=getScenario(state.scenarioCaseId);
+ const report=scenarioCaseSummary(d.id,{budget:state.scenarioCaseBudget});
+ try{
+  const blob=new Blob([report],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');
+  link.href=url;link.download='routinegap-fictional-case-'+d.id+'.txt';
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  notice('Fictional case notes exported locally. No real customer, photo, scan, or private shelf data was included.');
+ }catch{
+  notice('Could not export example notes in this browser.',true);
+ }
+}
 function renderInsights() {
  const snapshot=makeInsights({shelf:state.shelf,sampleInventory:state.sampleInventory,budget:state.budget,goal:state.goal,fragranceFree:state.fragranceFree,cartIds:state.cartIds,savedIds:state.savedIds});
  const total=snapshot.ownedCount;
