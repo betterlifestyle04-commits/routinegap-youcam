@@ -83,7 +83,7 @@ export function scenarioCaseSummary(id,{budget=null}={}){
  const p=x.after.shortlist.map(item=>item.name+' (fictional USD '+item.price+')').join(', ')||'No essential concept selected';
  return [x.label+' — fictional scenario',x.story,'Owned categories: '+x.covered.length+'/3.',
   'Budget: illustrative USD '+x.budget+'.',
-  'Without the example shelf: '+x.before.count+' proposed concepts, USD '+x.before.total+'.',
-  'With the example shelf: '+x.after.count+' proposed concepts, USD '+x.after.total+'.',
+  'Without the example shelf: '+x.before.count+' proposed concept'+(x.before.count===1?'':'s')+', USD '+x.before.total+'.',
+  'With the example shelf: '+x.after.count+' proposed concept'+(x.after.count===1?'':'s')+', USD '+x.after.total+'.',
   'Example shortlist: '+p+'.',x.provenance,x.constraints].join('\n');
 }
