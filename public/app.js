@@ -12,6 +12,7 @@ import {TOUR_STEPS,tourSummary,moveTour} from '/product-tour.js';
 import {HELP_ARTICLES,HELP_CATEGORIES,filterHelp,helpCategoryCounts,contextualHelp,validHelpTab} from '/help-center.js';
 import {PREF_STAGES,DEMO_BUDGETS,normalizePreferenceDraft,modifyPreferenceDraft,preferencePreview,stepPreferenceStage,differentPreferences} from '/preference-studio.js';
 import {UNCERTAIN_SCAN_KEY,newUncertainMarker,readUncertainMarker,classifyStartResponse,scanJourney} from '/scan-journey.js';
+import {SCENARIOS,getScenario,scenarioPreview,scenarioBudgetPreset,scenarioCaseSummary} from '/scenario-lab.js';
 import {planLocalPhoto,preparePhotoLocally,PHOTO_SOURCE_MAX_BYTES} from '/photo-tools.js';
 import {SELF_CHECKS,toggleSelfCheck,photoReadiness} from '/photo-readiness.js';
 import {createDecisionBrief} from '/report-export.js';
@@ -65,7 +66,7 @@ function saveUncertainSubmission(marker){
   return false;
  }
 }
-const state={scanPhase:'idle',scanPoll:0,uncertainSubmission:readUncertainSubmission(),preferenceStudio:null,helpQuery:'',helpCategory:'all',productTour:null,photoSelfChecks:{},storyId:null,tab:parseWorkspaceHash(window.location.hash)||'overview',globalSearchQuery:'',compareIds:(()=>{try{return normalizeCompareIds(localStorage.getItem(COMPARE_KEY),catalog);}catch{return [];}})(),compareQuery:'',compareStep:'all',insightBudget:null,shelfQuery:'',editingId:null,undoShelf:null,savedIds:(()=>{try{return normalizeSavedConcepts(localStorage.getItem(SAVED_CONCEPTS_KEY),catalog);}catch{return [];}})(),catalogQuery:'',catalogStep:'all',catalogDecision:'all',catalogSort:'recommended',savedOnly:false,affordableOnly:false,routineLog:(()=>{try{return localStorage.getItem(ROUTINE_LOG_KEY);}catch{return null;}})(),shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:savedLiveReport?.signals||null,scanSource:savedLiveReport?'live':null,savedLiveReport:!!savedLiveReport,cartIds:[],file:null,sourceFile:null,preview:null,imageReady:false,imageDimensions:null,canPrepare:false,preparing:false,photoPlan:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false,goalFromScan:null};
+const state={scanPhase:'idle',scanPoll:0,uncertainSubmission:readUncertainSubmission(),preferenceStudio:null,helpQuery:'',helpCategory:'all',productTour:null,photoSelfChecks:{},storyId:null,tab:parseWorkspaceHash(window.location.hash)||'overview',globalSearchQuery:'',compareIds:(()=>{try{return normalizeCompareIds(localStorage.getItem(COMPARE_KEY),catalog);}catch{return [];}})(),compareQuery:'',compareStep:'all',insightBudget:null,scenarioCaseId:'missing-spf',scenarioCaseBudget:null,shelfQuery:'',editingId:null,undoShelf:null,savedIds:(()=>{try{return normalizeSavedConcepts(localStorage.getItem(SAVED_CONCEPTS_KEY),catalog);}catch{return [];}})(),catalogQuery:'',catalogStep:'all',catalogDecision:'all',catalogSort:'recommended',savedOnly:false,affordableOnly:false,routineLog:(()=>{try{return localStorage.getItem(ROUTINE_LOG_KEY);}catch{return null;}})(),shelf:sampleShelf.map(x=>({...x})),budget:60,goal:'moisture',fragranceFree:false,sampleInventory:true,scan:savedLiveReport?.signals||null,scanSource:savedLiveReport?'live':null,savedLiveReport:!!savedLiveReport,cartIds:[],file:null,sourceFile:null,preview:null,imageReady:false,imageDimensions:null,canPrepare:false,preparing:false,photoPlan:null,consent:false,code:'',liveEnabled:false,providerConnection:'disabled',pending:readPendingScan(),busy:false,feedback:'',isError:false,goalFromScan:null};
 try{const saved=JSON.parse(localStorage.getItem('routinegap_state')||'null');if(saved&&typeof saved==='object'){
   state.shelf=normalizeShelf(saved.shelf);state.budget=Number.isFinite(saved.budget)?Math.max(0,Math.min(1000,saved.budget)):60;state.goal=goals.some(g=>g.id===saved.goal)?saved.goal:'moisture';state.fragranceFree=saved.fragranceFree===true;state.sampleInventory=saved.sampleInventory===true;
 }}catch{}
@@ -314,6 +315,7 @@ ${renderWorkspaceHub(d)}
     <button type="button" data-go="trail"><b>06</b><strong>Export the rationale</strong><span>Save a private decision brief</span></button>
   </div>
 </section>
+<div class="scenario-overview-card"><div><div class="eyebrow">EXPLORE FOUR FICTIONAL EXAMPLES</div><h2>See what changes when you know your shelf.</h2><p>Compare transparent before-and-after fictional routines, see exactly why example products were excluded and try several budgets—without touching your own data or using YouCam credits.</p></div><button type="button" class="primary" data-go="insights">Open Scenario Lab →</button></div>
 <div class="insights-overview-card"><div><div class="eyebrow">NEW · YOUR INSIGHTS</div><h2>See your routine and spending picture.</h2><p>Understand your basic step coverage, the price of products you recorded, and how different demo budgets change your suggested plan.</p></div><button class="secondary" data-go="insights">Explore my insights →</button></div>
 <div class="privacy-overview-bridge"><div><div class="eyebrow">PRIVACY · UNDER YOUR CONTROL</div><h2>Know what your browser remembers.</h2><p>Review stored data, export your shelf and clear records you no longer need.</p></div><button class="secondary" data-go="privacy">Open Privacy & Data →</button></div>
 <div class="routine-overview-callout"><div><div class="eyebrow">NEW · DAILY ROUTINE PLANNER</div><h2>From your shelf to your everyday routine.</h2><p>Make a morning and evening checklist from what you own. Only your own checkmarks count, not illustrative sample items.</p></div><button class="primary" data-go="routine">Open routine planner →</button></div>
@@ -688,8 +690,10 @@ function renderInsights() {
  <button type="button" class="tiny-btn" id="insights-budget-reset">Use my ${money(snapshot.decision.budget)} budget</button></div>
  <p class="muted small">This is a simple category/price thought experiment, not a prediction of savings, results or actual merchant availability.</p></div>
  <div class="insights-scenario" id="insights-scenario" aria-live="polite"></div></div></div>
+ <section class="scenario-lab" id="scenario-lab" aria-labelledby="scenario-lab-heading"><div class="scenario-lab-heading"><div><span class="eyebrow">EXPLORE THE DECISION ENGINE · FICTIONAL DATA ONLY</span><h2 id="scenario-lab-heading">Real logic. <em>Illustrative lives.</em></h2><p>Four fictional skincare situations show how entering owned products changes an essentials-first shortlist. Select a case, vary the budget and inspect the rule-driven difference. Your actual shelf, preferences and cart remain untouched.</p></div><span class="scenario-lab-count">04 EXAMPLE JOURNEYS</span></div><div id="scenario-lab-content"></div></section>
  <section class="insights-explain"><div><div class="eyebrow">TRANSPARENCY MATTERS</div><h2>Know what these numbers can—and cannot—tell you.</h2><p>These snapshots do not estimate skincare effectiveness, allergy safety, real-world spending, behavioral adherence, or improvement over time. Scan scores, if available, are vendor cosmetic observations and are not used to infer clinical outcomes or purchases.</p></div><button class="secondary" data-go="trail">Inspect decision logic →</button></section>`;
  renderScenario(snapshot);
+ renderScenarioLab();
 }
 function renderComparePicker(){
   const all=filterComparisonCandidates(catalog,{query:state.compareQuery,step:state.compareStep});
@@ -1240,6 +1244,12 @@ document.addEventListener('keydown',event=>{
 });
 window.addEventListener('resize',()=>{if(window.innerWidth>760)closeMobileMore({restoreFocus:false});});
 document.addEventListener('click',event=>{
+ const caseSelect=event.target.closest('[data-scenario-case]');
+ if(caseSelect){state.scenarioCaseId=getScenario(caseSelect.dataset.scenarioCase).id;state.scenarioCaseBudget=null;renderScenarioLab();$('#scenario-choice-'+state.scenarioCaseId)?.focus({preventScroll:true});return;}
+ const caseBudget=event.target.closest('[data-scenario-case-budget]');
+ if(caseBudget){const amount=scenarioBudgetPreset(caseBudget.dataset.scenarioCaseBudget);if(amount===null)return;state.scenarioCaseBudget=amount;renderScenarioLab();$('#scenario-budget-'+amount)?.focus({preventScroll:true});return;}
+ if(event.target.closest('#scenario-case-reset')){state.scenarioCaseBudget=null;renderScenarioLab();$('#scenario-case-reset')?.focus({preventScroll:true});return;}
+ if(event.target.closest('#scenario-case-export')){downloadScenarioCase();return;}
  if(event.target.closest('#launch-preference-studio')||event.target.closest('#shop-preference-studio')){openPreferenceStudio();return;}
  if(event.target.closest('#preference-close')||event.target.closest('[data-preference-close]')){closePreferenceStudio();return;}
  const selectedGoal=event.target.closest('[data-pref-goal]');if(selectedGoal){if(!state.preferenceStudio)return;state.preferenceStudio.draft=modifyPreferenceDraft(state.preferenceStudio.draft,{goal:selectedGoal.dataset.prefGoal});renderPreferenceStudio();return;}
